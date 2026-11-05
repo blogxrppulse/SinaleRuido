@@ -1,0 +1,2673 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sinal & Ruído — Ciência sem espetáculo. Tecnologia sem ilusão.</title>
+  
+  <!-- Meta SEO & Open Graph -->
+  <meta name="description" content="Revista digital editorial focada em ciência, tecnologia crítica, inteligência artificial e o futuro da humanidade. Separamos evidências de hype.">
+  <meta property="og:title" content="Sinal & Ruído — Ciência sem espetáculo. Tecnologia sem ilusão.">
+  <meta property="og:description" content="Portal editorial que filtra descobertas científicas e questiona exageros da tecnologia.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#087D55">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Inter & Newsreader for editorial aesthetic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#087D55',
+              dark: '#07543D',
+              light: '#E8F5EE',
+              subtle: '#F0F9F4'
+            },
+            editorial: {
+              graphite: '#17251F',
+              gray: '#F3F5F4',
+              text: '#68736D',
+              border: '#E2E7E4'
+            },
+            verdict: {
+              signal: '#087D55',
+              observation: '#D97706',
+              noise: '#DC2626'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Newsreader', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Editorial Typography & Ambience */
+    body {
+      color: #17251F;
+      background-color: #FFFFFF;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+    .font-editorial-serif {
+      font-family: 'Newsreader', serif;
+    }
+    
+    /* Subtle background ambient overlay video */
+    .ambient-editorial-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 480px;
+      overflow: hidden;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.12;
+    }
+    
+    @media (prefers-reduced-motion: reduce) {
+      .ambient-editorial-layer video {
+        display: none;
+      }
+      .ambient-editorial-layer {
+        background: radial-gradient(circle at 50% 20%, #E8F5EE 0%, #FFFFFF 70%);
+      }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F3F5F4;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #087D55;
+      border-radius: 9999px;
+    }
+    
+    /* Line Clamp fallback */
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .line-clamp-3 {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col selection:bg-brand-light selection:text-brand-dark">
+
+  <!-- ========================================== -->
+  <!-- TOAST NOTIFICATION CONTAINER               -->
+  <!-- ========================================== -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-[9999] flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+  <!-- ========================================== -->
+  <!-- LOGIN ÁREA EDITORIAL                       -->
+  <!-- ========================================== -->
+  <div id="admin-login-modal" class="fixed inset-0 z-[9990] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-editorial-border p-6">
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-brand flex items-center justify-center text-white">
+            <i data-lucide="shield-check" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-lg text-editorial-graphite">Acesso Editorial</h3>
+            <p class="text-xs text-editorial-text">Entre com sua conta da redação</p>
+          </div>
+        </div>
+        <button type="button" onclick="toggleAdminLoginModal(false)" class="p-1 hover:bg-gray-100 rounded text-gray-500" aria-label="Fechar">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="admin-login-form" onsubmit="handleAdminLogin(event)" class="space-y-3">
+        <div>
+          <label for="admin-login-email" class="block text-xs font-semibold text-editorial-graphite mb-1">E-mail</label>
+          <input type="email" id="admin-login-email" autocomplete="username" required placeholder="seu@email.com" class="w-full text-sm px-3 py-2.5 border border-editorial-border rounded-lg focus:ring-1 focus:ring-brand outline-none">
+        </div>
+        <div>
+          <label for="admin-login-password" class="block text-xs font-semibold text-editorial-graphite mb-1">Senha</label>
+          <input type="password" id="admin-login-password" autocomplete="current-password" required placeholder="••••••••" class="w-full text-sm px-3 py-2.5 border border-editorial-border rounded-lg focus:ring-1 focus:ring-brand outline-none">
+        </div>
+        <p id="admin-login-error" class="hidden text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2"></p>
+        <button type="submit" id="admin-login-submit" class="w-full mt-1 px-4 py-2.5 text-sm bg-brand text-white font-semibold hover:bg-brand-dark rounded-lg flex items-center justify-center gap-2">
+          <i data-lucide="log-in" class="w-4 h-4"></i>
+          <span>Entrar na redação</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- PUBLIC PORTAL VIEW                         -->
+  <!-- ========================================== -->
+  <div id="public-view" class="relative z-10 flex-grow flex flex-col">
+
+    <!-- Ambient Subtle Video / Editorial Workstation Overlay -->
+    <div class="ambient-editorial-layer">
+      <!-- Simulated editorial background video with smooth fallback -->
+      <video autoplay muted loop playsinline class="w-full h-full object-cover">
+        <source src="https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-woman-typing-on-a-typewriter-41006-large.mp4" type="video/mp4">
+      </video>
+      <div class="absolute inset-0 bg-gradient-to-b from-white/70 via-white/90 to-white"></div>
+    </div>
+
+    <!-- 1. TOP TICKER BAR -->
+    <aside aria-label="Informações do dia" class="relative z-20 border-b border-editorial-border bg-editorial-gray/80 backdrop-blur-md py-1.5 px-4 text-[11px] text-editorial-text">
+      <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-3">
+          <span class="inline-flex items-center gap-1.5 font-semibold text-brand">
+            <span class="w-1.5 h-1.5 rounded-full bg-brand animate-pulse"></span>
+            O QUE REALMENTE IMPORTA
+          </span>
+          <span class="hidden sm:inline text-gray-300">|</span>
+          <span id="current-date-display" class="hidden sm:inline"></span>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="hidden md:inline italic text-editorial-graphite/70 font-editorial-serif">"Ciência sem espetáculo. Tecnologia sem ilusão."</span>
+          <button onclick="requestAdminAccess()" class="hover:text-brand font-semibold flex items-center gap-1 text-editorial-graphite">
+            <i data-lucide="shield-check" class="w-3 h-3 text-brand"></i> Área Editorial / Admin
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 2. MAIN HEADER -->
+    <header class="relative z-20 border-b border-editorial-border bg-white/95 backdrop-blur-md sticky top-0 transition-all">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+        
+        <!-- Logo & Branding -->
+        <a href="javascript:void(0)" onclick="navigateToHome()" class="flex items-center gap-3 group">
+          <!-- Custom SVG Monogram -->
+          <div class="w-10 h-10 sm:w-12 sm:h-12 bg-editorial-graphite rounded-xl flex items-center justify-center text-white shadow-md group-hover:bg-brand transition-colors duration-200">
+            <svg class="w-6 h-6" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 16C9 10 11 10 16 16C21 22 23 22 26 16" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="8" cy="22" r="1.5" fill="#E8F5EE"/>
+              <circle cx="24" cy="10" r="1.5" fill="#087D55"/>
+            </svg>
+          </div>
+          <div>
+            <span class="text-2xl sm:text-3xl font-extrabold tracking-tight text-editorial-graphite font-serif">Sinal <span class="text-brand font-sans font-light">&</span> Ruído</span>
+            <span class="block text-[10px] tracking-widest uppercase font-medium text-editorial-text">Revista de Ciência & Pensamento Crítico</span>
+          </div>
+        </a>
+
+        <!-- Header Actions: Search & Newsletter Callout -->
+        <div class="flex items-center gap-2 sm:gap-4">
+          <!-- Search Bar (Desktop) -->
+          <div class="hidden lg:flex items-center relative">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 text-gray-400"></i>
+            <input type="text" id="desktop-search-input" onkeyup="handleSearch(this.value)" placeholder="Filtrar por tema, autor ou tese..." class="w-64 text-xs pl-9 pr-3 py-2 rounded-full border border-editorial-border bg-editorial-gray/50 focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all">
+          </div>
+
+          <button onclick="scrollToNewsletter()" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-light text-brand hover:bg-brand hover:text-white transition-all text-xs font-semibold">
+            <i data-lucide="mail" class="w-3.5 h-3.5"></i>
+            Assinar Boletim
+          </button>
+
+          <!-- Mobile Search Toggle -->
+          <button onclick="toggleMobileSearch()" class="lg:hidden p-2 rounded-lg text-editorial-graphite hover:bg-editorial-gray" aria-label="Abrir pesquisa">
+            <i data-lucide="search" class="w-5 h-5"></i>
+          </button>
+
+          <!-- Mobile Menu Trigger -->
+          <button onclick="toggleMobileNav()" class="lg:hidden p-2 rounded-lg text-editorial-graphite hover:bg-editorial-gray" aria-label="Abrir menu de categorias">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Search Input Collapse (Mobile) -->
+      <div id="mobile-search-bar" class="hidden lg:hidden px-4 pb-3 pt-1 border-t border-editorial-border bg-white">
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-gray-400"></i>
+          <input type="text" onkeyup="handleSearch(this.value)" placeholder="Buscar artigos, estudos ou ruídos..." class="w-full text-xs pl-9 pr-3 py-2.5 rounded-lg border border-editorial-border bg-editorial-gray/40 outline-none focus:border-brand">
+        </div>
+      </div>
+
+      <!-- Categories Navigation Bar -->
+      <nav class="border-t border-editorial-border/60 overflow-x-auto scrollbar-none" aria-label="Categorias principais">
+        <div class="max-w-7xl mx-auto px-4 flex items-center gap-1 sm:gap-2 whitespace-nowrap py-1">
+          <button onclick="filterCategory('todas')" class="cat-pill active text-xs font-medium px-3.5 py-1.5 rounded-full transition-colors text-brand bg-brand-light">Todas</button>
+          <button onclick="filterCategory('Ciência')" class="cat-pill text-xs font-medium px-3.5 py-1.5 rounded-full transition-colors text-editorial-graphite hover:text-brand hover:bg-brand-light/60">Ciência</button>
+          <button onclick="filterCategory('Inteligência Artificial')" class="cat-pill text-xs font-medium px-3.5 py-1.5 rounded-full transition-colors text-editorial-graphite hover:text-brand hover:bg-brand-light/60">Inteligência Artificial</button>
+          <button onclick="filterCategory('Tecnologia')" class="cat-pill text-xs font-medium px-3.5 py-1.5 rounded-full transition-colors text-editorial-graphite hover:text-brand hover:bg-brand-light/60">Tecnologia</button>
+          <button onclick="filterCategory('Espaço')" class="cat-pill text-xs font-medium px-3.5 py-1.5 rounded-full transition-colors text-editorial-graphite hover:text-brand hover:bg-brand-light/60">Espaço</button>
+          <button onclick="filterCategory('Energia')" class="cat-pill text-xs font-medium px-3.5 py-1.5 rounded-full transition-colors text-editorial-graphite hover:text-brand hover:bg-brand-light/60">Energia</button>
+          <button onclick="filterCategory('Biotecnologia')" class="cat-pill text-xs font-medium px-3.5 py-1.5 rounded-full transition-colors text-editorial-graphite hover:text-brand hover:bg-brand-light/60">Biotecnologia</button>
+          <button onclick="filterCategory('Física')" class="cat-pill text-xs font-medium px-3.5 py-1.5 rounded-full transition-colors text-editorial-graphite hover:text-brand hover:bg-brand-light/60">Física</button>
+          <button onclick="filterCategory('Futuro')" class="cat-pill text-xs font-medium px-3.5 py-1.5 rounded-full transition-colors text-editorial-graphite hover:text-brand hover:bg-brand-light/60">Futuro da Humanidade</button>
+          <button onclick="filterCategory('Análises')" class="cat-pill text-xs font-medium px-3.5 py-1.5 rounded-full transition-colors text-editorial-graphite hover:text-brand hover:bg-brand-light/60">Análises</button>
+        </div>
+      </nav>
+    </header>
+
+    <!-- BANNER AD: POSIÇÃO "Abaixo do Menu" (FORMATO 1: 970x250 ou Responsivo) -->
+    <div class="max-w-7xl mx-auto w-full px-4 pt-4" id="ad-slot-below-menu"></div>
+
+    <!-- MAIN EDITORIAL CONTENT CONTAINER -->
+    <main id="portal-content" class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full">
+      <!-- Dynamic render of Homepage or Single Article -->
+      <div id="portal-view-container"></div>
+    </main>
+
+    <!-- BANNER AD: POSIÇÃO "Antes do Footer" (FORMATO 2: Leaderboard 728x90 / Responsivo) -->
+    <div class="max-w-7xl mx-auto w-full px-4 pb-6" id="ad-slot-before-footer"></div>
+
+    <!-- SEÇÃO 7 — NEWSLETTER COMPACTA -->
+    <section id="newsletter-section" class="bg-editorial-graphite text-white py-14 px-4 relative overflow-hidden">
+      <div class="absolute -right-20 -bottom-20 w-80 h-80 rounded-full bg-brand/10 blur-3xl pointer-events-none"></div>
+      <div class="max-w-4xl mx-auto text-center relative z-10">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-brand text-white mb-4">
+          <i data-lucide="compass" class="w-3.5 h-3.5"></i> CURADORIA SEMANAL
+        </span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold font-serif tracking-tight mb-3">Menos barulho. Mais informação.</h2>
+        <p class="text-sm sm:text-base text-gray-300 max-w-xl mx-auto font-light mb-8">
+          Receba uma seleção das descobertas científicas, tecnologias emergentes e ensaios profundos que realmente merecem sua atenção. Zero clickbait.
+        </p>
+        <form onsubmit="handleNewsletterSubmit(event)" class="flex flex-col sm:flex-row items-center justify-center gap-2 max-w-md mx-auto">
+          <input type="email" id="newsletter-email" required placeholder="Seu melhor endereço de e-mail" class="w-full text-sm px-4 py-3 rounded-xl bg-white/10 text-white placeholder-gray-400 border border-white/20 focus:outline-none focus:ring-2 focus:ring-brand">
+          <button type="submit" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-brand hover:bg-brand-dark text-white font-medium text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2 shadow-lg">
+            <span>Inscrever</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </form>
+        <p class="text-[11px] text-gray-400 mt-3">Respeitamos sua privacidade. Cancele o recebimento quando quiser com um clique.</p>
+      </div>
+    </section>
+
+    <!-- SEÇÃO 8 — FOOTER EDITORIAL -->
+    <footer class="border-t border-editorial-border bg-white text-editorial-text text-xs py-12 px-4 sm:px-6">
+      <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
+        <div class="md:col-span-2 space-y-3">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 bg-editorial-graphite rounded-lg flex items-center justify-center text-white">
+              <svg class="w-4 h-4" viewBox="0 0 32 32" fill="none"><path d="M6 16C9 10 11 10 16 16C21 22 23 22 26 16" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/></svg>
+            </div>
+            <span class="text-lg font-bold text-editorial-graphite font-serif">Sinal & Ruído</span>
+          </div>
+          <p class="text-editorial-text leading-relaxed max-w-md">
+            Uma revista editorial comprometida com a precisão dos fatos, o rigor metodológico e a clareza analítica. Investigamos alegações tecnológicas e comunicamos a ciência com honestidade intelectual.
+          </p>
+          <div class="flex gap-4 pt-2">
+            <a href="javascript:void(0)" class="hover:text-brand transition"><i data-lucide="twitter" class="w-4 h-4"></i></a>
+            <a href="javascript:void(0)" class="hover:text-brand transition"><i data-lucide="linkedin" class="w-4 h-4"></i></a>
+            <a href="javascript:void(0)" class="hover:text-brand transition"><i data-lucide="github" class="w-4 h-4"></i></a>
+            <a href="javascript:void(0)" class="hover:text-brand transition"><i data-lucide="rss" class="w-4 h-4"></i></a>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-editorial-graphite uppercase tracking-wider text-[11px] mb-3">Eixos Editoriais</h4>
+          <ul class="space-y-2">
+            <li><a href="javascript:void(0)" onclick="filterCategory('Ciência')" class="hover:text-brand">Ciência Fundamental</a></li>
+            <li><a href="javascript:void(0)" onclick="filterCategory('Inteligência Artificial')" class="hover:text-brand">Inteligência Artificial</a></li>
+            <li><a href="javascript:void(0)" onclick="filterCategory('Espaço')" class="hover:text-brand">Astrofísica e Espaço</a></li>
+            <li><a href="javascript:void(0)" onclick="filterCategory('Energia')" class="hover:text-brand">Transição Energética</a></li>
+            <li><a href="javascript:void(0)" onclick="filterCategory('Biotecnologia')" class="hover:text-brand">Biotecnologia e Longevidade</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-editorial-graphite uppercase tracking-wider text-[11px] mb-3">Institucional & Transparência</h4>
+          <ul class="space-y-2">
+            <li><a href="javascript:void(0)" onclick="showEditorialManifesto()" class="hover:text-brand">Manifesto Editorial</a></li>
+            <li><a href="javascript:void(0)" onclick="showMethodologyModal()" class="hover:text-brand">Critério: Sinal ou Ruído?</a></li>
+            <li><a href="javascript:void(0)" class="hover:text-brand">Política de Publicidade</a></li>
+            <li><a href="javascript:void(0)" class="hover:text-brand">Privacidade e Termos</a></li>
+            <li><a href="javascript:void(0)" onclick="requestAdminAccess()" class="text-brand font-medium">Acesso Redação (/admin)</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="max-w-7xl mx-auto pt-6 border-t border-editorial-border flex flex-col sm:flex-row items-center justify-between gap-4 text-editorial-text/70">
+        <p>© 2026 Sinal & Ruído. Todos os direitos reservados. Ciência sem espetáculo. Tecnologia sem ilusão.</p>
+        <div class="flex items-center gap-3">
+          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-editorial-gray text-[10px] text-editorial-graphite font-mono">
+            v2.4-Production • Supabase Ready
+          </span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- PAINEL ADMINISTRATIVO (/admin)             -->
+  <!-- ========================================== -->
+  <div id="admin-view" class="hidden flex-grow min-h-screen bg-editorial-gray">
+    <div class="flex h-screen overflow-hidden">
+      
+      <!-- ADMIN SIDEBAR -->
+      <aside id="admin-sidebar" class="w-64 bg-editorial-graphite text-gray-300 flex-shrink-0 flex flex-col justify-between transition-all duration-300 z-30">
+        <div>
+          <!-- Sidebar Header -->
+          <div class="p-5 border-b border-white/10 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 bg-brand rounded-lg flex items-center justify-center text-white font-bold">
+                SR
+              </div>
+              <div>
+                <span class="font-serif font-bold text-white tracking-tight">Sinal & Ruído</span>
+                <span class="block text-[9px] uppercase tracking-wider text-emerald-400 font-sans font-medium">Redação Central</span>
+              </div>
+            </div>
+            <button onclick="toggleAdminSidebar()" class="lg:hidden text-gray-400 hover:text-white">
+              <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            </button>
+          </div>
+
+          <!-- User Role Badge -->
+          <div class="p-4 mx-3 my-3 bg-white/5 rounded-xl border border-white/5 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-brand-dark flex items-center justify-center text-white font-bold text-xs">
+              ED
+            </div>
+            <div class="overflow-hidden">
+              <div class="text-xs font-semibold text-white truncate" id="admin-user-name">—</div>
+              <div class="text-[10px] text-emerald-400 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span id="admin-user-role">Aguardando sessão</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Navigation Links -->
+          <nav class="px-3 space-y-1">
+            <button onclick="switchAdminTab('dashboard')" class="admin-nav-btn active w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all text-white bg-brand">
+              <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard Geral
+            </button>
+            <button onclick="switchAdminTab('articles')" class="admin-nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all text-gray-400 hover:text-white hover:bg-white/5">
+              <i data-lucide="file-text" class="w-4 h-4"></i> Gestão de Matérias
+            </button>
+            <button onclick="switchAdminTab('categories')" class="admin-nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all text-gray-400 hover:text-white hover:bg-white/5">
+              <i data-lucide="tags" class="w-4 h-4"></i> Categorias & Eixos
+            </button>
+            <button onclick="switchAdminTab('advertisements')" class="admin-nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all text-gray-400 hover:text-white hover:bg-white/5">
+              <i data-lucide="megaphone" class="w-4 h-4"></i> Anúncios & Banners
+            </button>
+            <button onclick="switchAdminTab('media')" class="admin-nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all text-gray-400 hover:text-white hover:bg-white/5">
+              <i data-lucide="image" class="w-4 h-4"></i> Biblioteca de Mídia
+            </button>
+            <button onclick="switchAdminTab('newsletter')" class="admin-nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all text-gray-400 hover:text-white hover:bg-white/5">
+              <i data-lucide="mail-check" class="w-4 h-4"></i> Inscritos Newsletter
+            </button>
+            <button onclick="switchAdminTab('users')" class="admin-nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all text-gray-400 hover:text-white hover:bg-white/5">
+              <i data-lucide="users" class="w-4 h-4"></i> Usuários & Papéis
+            </button>
+          </nav>
+        </div>
+
+        <!-- Sidebar Footer Action -->
+        <div class="p-4 border-t border-white/10 space-y-2">
+          <button onclick="switchView('public')" class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-gray-300">
+            <i data-lucide="external-link" class="w-3.5 h-3.5 text-brand-light"></i> Ver Portal Público
+          </button>
+          <button onclick="handleAdminLogout()" class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-brand-dark/50 hover:bg-brand text-xs text-white">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Sair da redação
+          </button>
+        </div>
+      </aside>
+
+      <!-- ADMIN MAIN CONTENT AREA -->
+      <div class="flex-1 flex flex-col h-full overflow-hidden">
+        
+        <!-- Admin Topbar -->
+        <header class="bg-white border-b border-editorial-border px-6 py-3.5 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <button onclick="toggleAdminSidebar()" class="lg:hidden p-1.5 rounded-lg border text-gray-600 hover:bg-gray-50">
+              <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+            <h1 id="admin-current-section-title" class="text-base font-bold text-editorial-graphite">Dashboard Editorial</h1>
+          </div>
+          <div class="flex items-center gap-3">
+            <button onclick="openArticleEditorModal()" class="px-3.5 py-2 bg-brand text-white rounded-lg text-xs font-semibold hover:bg-brand-dark transition flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>NOVA MATÉRIA</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- Admin Scrollable Canvas -->
+        <main class="flex-1 overflow-y-auto p-6" id="admin-tab-content">
+          <!-- Dynamic Admin Tabs rendered by JavaScript -->
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: EDITOR DE MATÉRIAS                  -->
+  <!-- ========================================== -->
+  <div id="article-modal" class="fixed inset-0 z-[9995] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-4xl w-full my-auto shadow-2xl border border-editorial-border flex flex-col max-h-[92vh]">
+      
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-editorial-border flex items-center justify-between bg-editorial-gray/40">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-brand-light flex items-center justify-center text-brand">
+            <i data-lucide="edit-3" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 id="article-modal-title" class="font-bold text-base text-editorial-graphite">Compor Nova Matéria</h3>
+            <p class="text-[11px] text-editorial-text">Edição de texto e verificação editorial Sinal ou Ruído</p>
+          </div>
+        </div>
+        <button onclick="closeArticleEditorModal()" class="p-1.5 hover:bg-gray-200 rounded-lg text-gray-500">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body Form -->
+      <form id="article-form" onsubmit="handleSaveArticle(event)" class="p-6 overflow-y-auto space-y-6 text-xs">
+        <input type="hidden" id="article-form-id">
+
+        <!-- Grid 1: Título e Slug -->
+        <div class="space-y-4">
+          <div>
+            <label class="block font-semibold text-editorial-graphite mb-1">Título da Matéria *</label>
+            <input type="text" id="art-title" required onkeyup="autoGenerateSlug(this.value)" placeholder="Ex: A Fusão Nuclear Alcançou o Ponto de Ignição Real?" class="w-full text-sm font-serif font-bold px-3 py-2.5 border rounded-lg focus:ring-1 focus:ring-brand outline-none">
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block font-semibold text-editorial-graphite mb-1">Subtítulo / Linha Fina</label>
+              <input type="text" id="art-subtitle" placeholder="Contextualize a novidade sem exageros sensacionalistas" class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none">
+            </div>
+            <div>
+              <label class="block font-semibold text-editorial-graphite mb-1">Slug URL amigável</label>
+              <input type="text" id="art-slug" required class="w-full px-3 py-2 border rounded-lg bg-gray-50 focus:ring-1 focus:ring-brand outline-none font-mono">
+            </div>
+          </div>
+        </div>
+
+        <!-- Grid 2: Categoria, Autor, Status e Tempo -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label class="block font-semibold text-editorial-graphite mb-1">Categoria Principal *</label>
+            <select id="art-category" required class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none bg-white">
+              <option value="Ciência">Ciência</option>
+              <option value="Inteligência Artificial">Inteligência Artificial</option>
+              <option value="Tecnologia">Tecnologia</option>
+              <option value="Espaço">Espaço</option>
+              <option value="Energia">Energia</option>
+              <option value="Biotecnologia">Biotecnologia</option>
+              <option value="Física">Física</option>
+              <option value="Futuro">Futuro da Humanidade</option>
+              <option value="Análises">Análises</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-editorial-graphite mb-1">Autor / Pesquisador *</label>
+            <input type="text" id="art-author" required value="Dr. Fernando Bastos" class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none">
+          </div>
+
+          <div>
+            <label class="block font-semibold text-editorial-graphite mb-1">Status de Publicação</label>
+            <select id="art-status" class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none bg-white">
+              <option value="publicada">Publicada (No ar)</option>
+              <option value="rascunho">Rascunho</option>
+              <option value="revisao">Em Revisão</option>
+              <option value="agendada">Agendada</option>
+              <option value="arquivada">Arquivada</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-editorial-graphite mb-1">Tempo Leitura (minutos)</label>
+            <input type="number" id="art-reading-time" min="1" max="60" value="5" class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none">
+          </div>
+        </div>
+
+        <!-- MÓDULO EXCLUSIVO: CLASSIFICAÇÃO "SINAL OU RUÍDO" -->
+        <div class="p-4 rounded-xl border border-brand/30 bg-brand-light/30 space-y-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-brand"></span>
+            <label class="font-bold text-sm text-editorial-graphite">Classificação Editorial "Sinal ou Ruído?"</label>
+          </div>
+          <p class="text-[11px] text-editorial-text">
+            Atribua conscientemente o nível de sustentação científica desta matéria conforme nosso protocolo editorial.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <label class="border rounded-xl p-3 flex items-start gap-2.5 bg-white cursor-pointer hover:border-brand">
+              <input type="radio" name="art-classification" value="sinal" checked class="mt-1 text-brand focus:ring-brand">
+              <div>
+                <span class="font-bold text-brand block">SINAL</span>
+                <span class="text-[10px] text-gray-500">Respaldado por dados robustos, replicação e consenso metodológico.</span>
+              </div>
+            </label>
+            <label class="border rounded-xl p-3 flex items-start gap-2.5 bg-white cursor-pointer hover:border-amber-600">
+              <input type="radio" name="art-classification" value="em_observacao" class="mt-1 text-amber-600 focus:ring-amber-600">
+              <div>
+                <span class="font-bold text-amber-600 block">EM OBSERVAÇÃO</span>
+                <span class="text-[10px] text-gray-500">Resultados preliminares, pré-prints ou amostras reduzidas.</span>
+              </div>
+            </label>
+            <label class="border rounded-xl p-3 flex items-start gap-2.5 bg-white cursor-pointer hover:border-red-600">
+              <input type="radio" name="art-classification" value="ruido" class="mt-1 text-red-600 focus:ring-red-600">
+              <div>
+                <span class="font-bold text-red-600 block">RUÍDO</span>
+                <span class="text-[10px] text-gray-500">Exagero da imprensa, marketing corporativo ou erro interpretativo.</span>
+              </div>
+            </label>
+          </div>
+          <div>
+            <label class="block font-semibold text-editorial-graphite mb-1">Justificativa Editorial e Limitações Observadas *</label>
+            <textarea id="art-justification" rows="2" placeholder="Explique sucintamente as evidências pesadas, amostragens ou conflitos de interesse..." class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none"></textarea>
+          </div>
+        </div>
+
+        <!-- Imagem de Capa e Créditos -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="md:col-span-2">
+            <label class="block font-semibold text-editorial-graphite mb-1">URL da Imagem de Capa (ou carregamento) *</label>
+            <input type="url" id="art-cover" required placeholder="https://images.unsplash.com/..." class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-editorial-graphite mb-1">Crédito / Fonte da Foto</label>
+            <input type="text" id="art-credit" placeholder="Ex: NASA / JPL-Caltech / Science" class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none">
+          </div>
+        </div>
+
+        <!-- Resumo Editorial -->
+        <div>
+          <label class="block font-semibold text-editorial-graphite mb-1">Resumo Executivo (Exibido nos cards e feeds) *</label>
+          <textarea id="art-excerpt" rows="2" required placeholder="Duas a três frases objetivas que comunicam a descoberta e o porquê dela ser relevante." class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none"></textarea>
+        </div>
+
+        <!-- Conteúdo Completo (Suporte a formatação rica, intertítulos e referências) -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="font-semibold text-editorial-graphite">Corpo Completo da Matéria (Suporta HTML & Marcações Editoriais) *</label>
+            <div class="flex items-center gap-1 text-[11px] text-gray-500">
+              <span>Tags aceitas: &lt;h3&gt;, &lt;p&gt;, &lt;blockquote&gt;, &lt;ul&gt;, &lt;strong&gt;</span>
+            </div>
+          </div>
+          <textarea id="art-content" rows="10" required class="w-full px-3 py-2.5 border rounded-lg focus:ring-1 focus:ring-brand outline-none font-sans leading-relaxed"></textarea>
+        </div>
+
+        <!-- Fontes e Referências Científicas -->
+        <div>
+          <label class="block font-semibold text-editorial-graphite mb-1">Referências e Papers Científicos (Uma por linha: Título | URL)</label>
+          <textarea id="art-sources" rows="2" placeholder="Ex: Nature Electronics DOI: 10.1038/... | https://nature.com/articles/sample" class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none font-mono text-[11px]"></textarea>
+        </div>
+
+        <!-- Metatags SEO -->
+        <div class="border-t pt-4 grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50/70 p-3 rounded-lg">
+          <div>
+            <label class="block font-semibold text-editorial-graphite mb-1">SEO Title</label>
+            <input type="text" id="art-seo-title" placeholder="Título otimizado para buscadores" class="w-full px-3 py-2 border rounded bg-white">
+          </div>
+          <div>
+            <label class="block font-semibold text-editorial-graphite mb-1">Palavra-chave foco</label>
+            <input type="text" id="art-seo-keyword" placeholder="Ex: Fusão nuclear limpa" class="w-full px-3 py-2 border rounded bg-white">
+          </div>
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t">
+          <button type="button" onclick="closeArticleEditorModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
+          <button type="submit" class="px-5 py-2.5 bg-brand text-white font-semibold rounded-lg hover:bg-brand-dark transition shadow-md flex items-center gap-1.5">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            Salvar e Publicar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: EDITOR DE ANÚNCIOS / BANNERS        -->
+  <!-- ========================================== -->
+  <div id="ad-modal" class="fixed inset-0 z-[9995] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-2xl w-full my-auto shadow-2xl border border-editorial-border p-6 flex flex-col max-h-[90vh]">
+      <div class="flex items-center justify-between border-b pb-4 mb-4">
+        <div>
+          <h3 id="ad-modal-title" class="font-bold text-base text-editorial-graphite">Cadastrar Campanha Publicitária</h3>
+          <p class="text-xs text-editorial-text">Formatos compatíveis com IAB e identificação explícita</p>
+        </div>
+        <button onclick="closeAdModal()" class="p-1.5 hover:bg-gray-100 rounded text-gray-500">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="ad-form" onsubmit="handleSaveAd(event)" class="overflow-y-auto space-y-4 text-xs">
+        <input type="hidden" id="ad-form-id">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold mb-1">Nome Interno da Campanha *</label>
+            <input type="text" id="ad-campaign" required placeholder="Ex: Lançamento Livro Quântico" class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold mb-1">Nome do Anunciante *</label>
+            <input type="text" id="ad-advertiser" required placeholder="Ex: Editora Nexus Ciência" class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold mb-1">Formato Predefinido *</label>
+            <select id="ad-format" onchange="updateAdDimensionsHelper(this.value)" class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none bg-white">
+              <option value="horizontal_principal">Formato 1: Banner Horizontal Principal (970x250)</option>
+              <option value="leaderboard">Formato 2: Leaderboard (728x90)</option>
+              <option value="retangulo_medio">Formato 3: Retângulo Médio (300x250)</option>
+              <option value="retangulo_grande">Formato 4: Retângulo Grande (336x280)</option>
+              <option value="mobile_banner">Formato 5: Banner Mobile (320x100)</option>
+              <option value="mobile_expandido">Formato 6: Mobile Compacto (320x50)</option>
+              <option value="responsivo" selected>Formato 7: Banner Responsivo Multi-Dispositivo</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold mb-1">Posição no Portal *</label>
+            <select id="ad-placement" class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none bg-white">
+              <option value="below_menu">Abaixo do Menu Principal</option>
+              <option value="after_headline">Após a Manchete Principal</option>
+              <option value="between_sections">Entre Seções de Destaques</option>
+              <option value="sidebar_right">Sidebar Direita</option>
+              <option value="inside_article">Dentro da Leitura da Matéria</option>
+              <option value="before_footer">Antes do Rodapé (Footer)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Dimensões informativas -->
+        <div id="ad-spec-box" class="p-3 bg-brand-light/40 rounded-lg text-brand-dark flex items-center justify-between">
+          <span>Proporção recomendada: <strong>970 x 250 px</strong> (Desktop) / <strong>320 x 100 px</strong> (Mobile)</span>
+          <span class="text-[10px] font-mono">Max: 350KB</span>
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1">Imagem Banner Desktop (URL ou CDN) *</label>
+          <input type="url" id="ad-img-desktop" required placeholder="https://..." class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-semibold mb-1">Imagem Banner Mobile (Opcional)</label>
+            <input type="url" id="ad-img-mobile" placeholder="https://..." class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold mb-1">URL de Destino (Link) *</label>
+            <input type="url" id="ad-url" required placeholder="https://anunciante.com.br" class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block font-semibold mb-1">Data Início *</label>
+            <input type="date" id="ad-start-date" required class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold mb-1">Data Término *</label>
+            <input type="date" id="ad-end-date" required class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold mb-1">Status da Veiculação</label>
+            <select id="ad-status" class="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-brand outline-none bg-white">
+              <option value="ativo">Ativo</option>
+              <option value="pausado">Pausado</option>
+              <option value="expirado">Expirado</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3 border-t">
+          <button type="button" onclick="closeAdModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
+          <button type="submit" class="px-5 py-2.5 bg-brand text-white font-semibold rounded-lg hover:bg-brand-dark transition flex items-center gap-1.5">
+            <i data-lucide="check" class="w-4 h-4"></i> Salvar Anúncio
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: CATEGORIA                           -->
+  <!-- ========================================== -->
+  <div id="category-modal" class="fixed inset-0 z-[9995] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-editorial-border p-6">
+      <div class="flex items-center justify-between border-b pb-3 mb-4">
+        <h3 class="font-bold text-base text-editorial-graphite">Gerenciar Categoria</h3>
+        <button onclick="closeCategoryModal()" class="p-1 hover:bg-gray-100 rounded text-gray-500">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="category-form" onsubmit="handleSaveCategory(event)" class="space-y-4 text-xs">
+        <input type="hidden" id="cat-form-id">
+        <div>
+          <label class="block font-semibold mb-1">Nome da Categoria *</label>
+          <input type="text" id="cat-name" required placeholder="Ex: Neurociência" class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-1 focus:ring-brand">
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">Slug *</label>
+          <input type="text" id="cat-slug" required placeholder="neurociencia" class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-1 focus:ring-brand font-mono">
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">Descrição</label>
+          <input type="text" id="cat-desc" placeholder="Avanços em cognição, cérebro e interfaces..." class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-1 focus:ring-brand">
+        </div>
+        <div class="flex justify-end gap-2 pt-2 border-t">
+          <button type="button" onclick="closeCategoryModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
+          <button type="submit" class="px-4 py-2 bg-brand text-white font-medium rounded-lg hover:bg-brand-dark">Salvar Categoria</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT: ENGINE PRINCIPAL DO PORTAL EDITORIAL SINAL & RUÍDO           -->
+  <!-- ========================================================================= -->
+  <script>
+    // ==========================================
+    // 1. ESTADO GLOBAL & MOCK DE PRODUÇÃO INICIAL
+    // ==========================================
+    let currentView = 'public'; // 'public' | 'admin' | 'article-view'
+    let currentCategoryFilter = 'todas';
+    let currentSearchQuery = '';
+    let readingArticleId = null;
+    let adminActiveTab = 'dashboard';
+
+    // Mock de artigos ricos para carregamento imediato e demonstração impecável
+    const initialArticles = [
+      {
+        id: 'art-001',
+        title: 'Fusão Nuclear com Ganho Líquido: O que os Anúncios não Contaram',
+        subtitle: 'Avanços em laboratório demonstram viabilidade física, mas desafios de engenharia mantêm a rede elétrica distante por décadas.',
+        slug: 'fusao-nuclear-ganho-liquido-mitos-e-fatos',
+        category: 'Energia',
+        author: 'Dr. Fernando Bastos',
+        author_role: 'Físico Nuclear & Editor Sênior',
+        date: '2026-11-03',
+        reading_time: 7,
+        cover_image: 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&w=1200&q=80',
+        cover_caption: 'Câmara de confinamento magnético em instalação de pesquisa avançada.',
+        image_credit: 'ITER Organization / Max Planck IPP',
+        editorial_classification: 'em_observacao',
+        editorial_justification: 'O ganho térmico Q > 1 no alvo de plasma foi comprovado em ignição inercial, mas o consumo da planta como um todo (energia tomada da tomada) ainda é amplamente negativo. Não há geração elétrica comercial no curto prazo.',
+        excerpt: 'Análises triunfantes na imprensa tradicional sugeriram energia limpa ilimitada para amanhã. A realidade física exige distinguir Q-plasma de Q-engenharia.',
+        content: `
+          <p class="text-base sm:text-lg leading-relaxed text-editorial-graphite mb-6">
+            Nos últimos meses, manchetes globais anunciaram que a humanidade finalmente destravou o Santo Graal da energia: a fusão nuclear controlada com ganho de energia. A narrativa sugere que reatores comerciais limpos, seguros e infinitos estão prestes a substituir as termelétricas a carvão e gás natural.
+          </p>
+          <h3 class="text-xl sm:text-2xl font-serif font-bold text-editorial-graphite mt-8 mb-4">A Fronteira entre Q-Plasma e Q-Planta</h3>
+          <p class="leading-relaxed mb-4">
+            Para separar o <strong>Sinal</strong> do <strong>Ruído</strong>, precisamos olhar para os números que os comunicados à imprensa costumam omitir. O experimento amplamente divulgado obteve aproximadamente 3,15 Megajoules (MJ) de saída a partir de 2,05 MJ de lasers disparados contra a cápsula de combustível. Em termos de física do plasma, isso configura um ganho termodinâmico genuíno de 1,5x.
+          </p>
+          <blockquote class="my-6 p-5 border-l-4 border-brand bg-brand-light/30 rounded-r-xl italic font-serif text-lg text-editorial-graphite">
+            "Comemorar o ganho do laser sobre a cápsula sem considerar os 300 Megajoules puxados da rede para alimentar os lasers é o equivalente a celebrar um lucro de 1 real após gastar 150 reais em transporte."
+          </blockquote>
+          <p class="leading-relaxed mb-4">
+            A eficiência de conversão dos lasers atuais gira em torno de 1%. Isso significa que foram necessários 300 MJ da rede elétrica pública para carregar os capacitores que entregaram míseros 2 MJ de luz concentrada. Portanto, em termos de engenharia sistêmica, o rendimento global foi inferior a 1% do investimento.
+          </p>
+          <h3 class="text-xl sm:text-2xl font-serif font-bold text-editorial-graphite mt-8 mb-4">Os Três Gargalos Não Resolvidos</h3>
+          <ul class="list-disc pl-6 space-y-2 mb-6">
+            <li><strong>Suprimento de Trítio:</strong> O trítio é um isótopo ultra-raro com meia-vida de 12 anos. Reatores comerciais precisarão de mantas de reprodução com lítio ainda em estágio embrionário.</li>
+            <li><strong>Degradação de Materiais:</strong> Nêutrons de 14.1 MeV bombardeiam as paredes do vaso, tornando as ligas metálicas quebradiças e radioativas após meses de fluxo intenso.</li>
+            <li><strong>Taxa de Repetição:</strong> Disparar lasers uma vez ao dia em laboratório é ciência. Fazer isso 10 vezes por segundo, 24 horas por dia, 365 dias por ano, é uma engenharia que ainda sequer foi desenhada.</li>
+          </ul>
+        `,
+        sources: [
+          { title: "Lawrence Livermore National Laboratory Official Release (2025)", url: "https://llnl.gov" },
+          { title: "Physical Review Letters — Thermonuclear Energy Yield Measurements", url: "https://journals.aps.org/prl" }
+        ],
+        views_count: 1420,
+        status: 'publicada'
+      },
+      {
+        id: 'art-002',
+        title: 'Modelos de Linguagem e Raciocínio Formal: A Ilusão da Intencionalidade',
+        subtitle: 'Como o autocomplete sofisticado gera respostas coerentes sem possuir modelos mentais de causa e efeito.',
+        slug: 'ia-modelos-linguagem-raciocinio-e-ilusao',
+        category: 'Inteligência Artificial',
+        author: 'Beatriz Vasconcelos',
+        author_role: 'Pesquisadora em Ciência da Computação',
+        date: '2026-11-02',
+        reading_time: 6,
+        cover_image: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=800&q=80',
+        cover_caption: 'Visualização de matrizes de atenção e pesos probabilísticos em redes neurais.',
+        image_credit: 'DeepMind Research Lab',
+        editorial_classification: 'sinal',
+        editorial_justification: 'Comprovado por testes controlados de invariância lógica: pequenos ruídos semânticos em problemas matemáticos derrubam o desempenho de LLMs de ponta em até 70%, comprovando dependência de memorização vetorial.',
+        excerpt: 'Grandes corporações vendem a ideia de mentes digitais com consciência emergente. A matemática por trás dos transformadores revela outra verdade.',
+        content: `
+          <p class="leading-relaxed mb-4">
+            A tendência humana de projetar consciência em qualquer sistema que dialogue conosco em linguagem natural é antiga, mas atingiu um pico sem precedentes com os avanços recentes em inteligência artificial generativa.
+          </p>
+          <p class="leading-relaxed mb-4">
+            Testes cegos demonstram que, ao inverter premissas lógicas simples em problemas clássicos de física colegial, modelos de ponta continuam gerando a resposta correspondente à versão decorada da internet, ignorando contradições flagrantes na premissa informada pelo usuário.
+          </p>
+        `,
+        sources: [
+          { title: "arXiv: Formal Reasoning Invariance in Modern Transformers (2025)", url: "https://arxiv.org" }
+        ],
+        views_count: 2890,
+        status: 'publicada'
+      },
+      {
+        id: 'art-003',
+        title: 'Telescópio James Webb e as Galáxias Proibidas: O Big Bang Foi Refutado?',
+        subtitle: 'A resposta curta é não. Mas a cosmologia padrão precisará revisar a rapidez com que a poeira e os buracos negros supermassivos colapsaram no universo jovem.',
+        slug: 'james-webb-galaxias-antigas-big-bang-cosmologia',
+        category: 'Espaço',
+        author: 'Prof. Carlos Menezes',
+        author_role: 'Astrofísico & Colunista',
+        date: '2026-11-01',
+        reading_time: 5,
+        cover_image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80',
+        cover_caption: 'Imagem de campo profundo capturada por infravermelho médio.',
+        image_credit: 'NASA, ESA, CSA, STScI',
+        editorial_classification: 'ruido',
+        editorial_justification: 'Afirmações de que "o Big Bang caiu" provêm de canais sensacionalistas no YouTube e blogs esotéricos. Nenhuma publicação peer-reviewed de cosmologia apoia o descarte da métrica FLRW.',
+        excerpt: 'O surgimento de galáxias luminosas 300 milhões de anos após a recombinação desafia simulações computacionais, mas confirma a solidez da física inflacionária.',
+        content: `
+          <p class="leading-relaxed mb-4">
+            Poucas coisas geram tantos cliques quanto anunciar o fim da física moderna. Quando o telescópio espacial James Webb começou a enviar dados do campo profundo mostrando galáxias com alta massa estelar a redshift z > 10, manchetes sensacionalistas decretaram: "O Big Bang está errado".
+          </p>
+          <p class="leading-relaxed mb-4">
+            Na realidade, o modelo Lambda-CDM requer ajustes nas taxas de eficiência de formação de estrelas primordiais, não uma rejeição da expansão métrica do espaço-tempo.
+          </p>
+        `,
+        sources: [
+          { title: "Astrophysical Journal Letters: High-z Luminosity Functions", url: "https://iopscience.iop.org" }
+        ],
+        views_count: 980,
+        status: 'publicada'
+      },
+      {
+        id: 'art-004',
+        title: 'Suplementos Antienvelhecimento: Entre o Laboratório em Camundongos e a Farmácia',
+        subtitle: 'NMN, metformina e rapamicina viraram febre entre bilionários do Vale do Silício. Os ensaios clínicos em humanos sustentam as promessas?',
+        slug: 'suplementos-longevidade-nmn-rapamicina-evidencias',
+        category: 'Biotecnologia',
+        author: 'Dra. Helena Sampaio',
+        author_role: 'Médica & Pesquisadora em Bioquímica',
+        date: '2026-10-29',
+        reading_time: 8,
+        cover_image: 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=800&q=80',
+        cover_caption: 'Microscopia eletrônica de cultura de células senescentes.',
+        image_credit: 'Wellcome Trust Medical Collection',
+        editorial_classification: 'em_observacao',
+        editorial_justification: 'Aumento modesto nos níveis de NAD+ sérico não se traduziu até o momento em extensão clinicamente mensurável da expectativa de vida ou redução de desfechos cardiovasculares duros em humanos saudáveis.',
+        excerpt: 'Um olhar sóbrio sobre a bilionária indústria da longevidade: o que é farmacologia séria e o que é pura ansiedade diante da mortalidade.',
+        content: `
+          <p class="leading-relaxed mb-4">
+            Viver até os 120 anos com o vigor de um jovem de 30 tornou-se a nova obsessão do ecossistema de venture capital. No entanto, o fosso translacional entre estender a sobrevida de roedores em ambiente estéril e prescrever compostos para humanos adultos é gigantesco.
+          </p>
+        `,
+        sources: [
+          { title: "The Lancet Healthy Longevity Review 2025", url: "https://thelancet.com" }
+        ],
+        views_count: 2150,
+        status: 'publicada'
+      }
+    ];
+
+    // Campanhas de anúncios ativas com formatos IAB e rastreamento
+    const initialAdvertisements = [
+      {
+        id: 'ad-001',
+        campaign_name: 'Pós-Graduação em Astrofísica Computacional',
+        advertiser_name: 'Instituto Nexus de Ciências',
+        format: 'horizontal_principal',
+        placement: 'below_menu',
+        image_desktop: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=970&h=250&q=80',
+        image_mobile: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=320&h=100&q=80',
+        destination_url: 'https://example.com/astrofisica-nexus',
+        alt_text: 'Inscrições abertas para o Programa de Pós-Graduação em Ciência de Dados e Astrofísica.',
+        status: 'ativo',
+        start_date: '2026-10-01',
+        end_date: '2026-12-31',
+        impressions_count: 8430,
+        clicks_count: 312
+      },
+      {
+        id: 'ad-002',
+        campaign_name: 'Livraria Científica — Edições Históricas',
+        advertiser_name: 'Editora Teorema',
+        format: 'leaderboard',
+        placement: 'before_footer',
+        image_desktop: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=728&h=90&q=80',
+        image_mobile: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=320&h=50&q=80',
+        destination_url: 'https://example.com/livraria-teorema',
+        alt_text: 'Clássicos da filosofia da ciência e tratados de física com 25% de desconto.',
+        status: 'ativo',
+        start_date: '2026-10-15',
+        end_date: '2026-11-30',
+        impressions_count: 5210,
+        clicks_count: 184
+      },
+      {
+        id: 'ad-003',
+        campaign_name: 'Supercomputação Quântica em Nuvem',
+        advertiser_name: 'QubitSphere Labs',
+        format: 'retangulo_medio',
+        placement: 'sidebar_right',
+        image_desktop: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=300&h=250&q=80',
+        image_mobile: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=300&h=250&q=80',
+        destination_url: 'https://example.com/qubitsphere',
+        alt_text: 'Acesse simuladores quânticos de 128 qubits com API Python.',
+        status: 'ativo',
+        start_date: '2026-10-01',
+        end_date: '2026-12-31',
+        impressions_count: 3950,
+        clicks_count: 142
+      }
+    ];
+
+    let categoriesList = [
+      { id: 'cat-1', name: 'Ciência', slug: 'ciencia', count: 18 },
+      { id: 'cat-2', name: 'Inteligência Artificial', slug: 'inteligencia-artificial', count: 24 },
+      { id: 'cat-3', name: 'Tecnologia', slug: 'tecnologia', count: 31 },
+      { id: 'cat-4', name: 'Espaço', slug: 'espaco', count: 15 },
+      { id: 'cat-5', name: 'Energia', slug: 'energia', count: 12 },
+      { id: 'cat-6', name: 'Biotecnologia', slug: 'biotecnologia', count: 14 },
+      { id: 'cat-7', name: 'Física', slug: 'fisica', count: 9 },
+      { id: 'cat-8', name: 'Futuro', slug: 'futuro', count: 11 },
+      { id: 'cat-9', name: 'Análises', slug: 'analises', count: 22 }
+    ];
+
+    let newsletterSubscribers = [
+      { id: 'sub-1', email: 'laura.pesquisa@usp.br', date: '2026-11-04 09:15', status: 'ativo' },
+      { id: 'sub-2', email: 'marcelo.eng@unicamp.br', date: '2026-11-03 14:32', status: 'ativo' },
+      { id: 'sub-3', email: 'ana.biomed@ufrj.br', date: '2026-11-01 18:20', status: 'ativo' }
+    ];
+
+    // Banco ativo em memória (sincronizado automaticamente com Supabase)
+    let articles = [...initialArticles];
+    let advertisements = [...initialAdvertisements];
+
+    // Supabase — URL e anon key públicas do projeto (nunca service_role / access token)
+    const SUPABASE_URL = 'https://raexfokkewinaovbgdsp.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhZXhmb2trZXdpbmFvdmJnZHNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4MzE5NDAsImV4cCI6MjEwOTQwNzk0MH0.JbIqiDccb4M1SJs4aq8f1LzD6wIsXezd76XHMdvRj1s';
+
+    let supabaseClient = null;
+    let currentUser = null;
+    let currentProfile = null;
+
+    const ROLE_LABELS = {
+      superadmin: 'Superadministrador',
+      editor: 'Editor',
+      redator: 'Redator'
+    };
+
+    // ==========================================
+    // 2. INICIALIZAÇÃO DO SISTEMA
+    // ==========================================
+    window.addEventListener('DOMContentLoaded', async () => {
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      const todayStr = new Date().toLocaleDateString('pt-BR', options);
+      const capDate = todayStr.charAt(0).toUpperCase() + todayStr.slice(1);
+      const dateEl = document.getElementById('current-date-display');
+      if (dateEl) dateEl.textContent = capDate;
+
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+
+      await initSupabaseAuth();
+
+      renderPublicPortal();
+      renderPublicAds();
+    });
+
+    async function initSupabaseAuth() {
+      if (!window.supabase) {
+        console.warn('SDK Supabase não carregado.');
+        return;
+      }
+      try {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session?.user) {
+          await loadCurrentUser(session.user);
+        }
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+          if (session?.user) {
+            await loadCurrentUser(session.user);
+          } else {
+            currentUser = null;
+            currentProfile = null;
+            updateAdminUserUi();
+            if (currentView === 'admin') {
+              switchView('public');
+            }
+          }
+        });
+      } catch (e) {
+        console.warn('Falha ao inicializar Supabase Auth:', e);
+      }
+    }
+
+    async function loadCurrentUser(user) {
+      currentUser = user;
+      currentProfile = null;
+      if (supabaseClient) {
+        const { data, error } = await supabaseClient
+          .from('profiles')
+          .select('id, full_name, email, role')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (!error) currentProfile = data;
+      }
+      updateAdminUserUi();
+    }
+
+    function updateAdminUserUi() {
+      const nameEl = document.getElementById('admin-user-name');
+      const roleEl = document.getElementById('admin-user-role');
+      if (!nameEl || !roleEl) return;
+      if (!currentUser) {
+        nameEl.textContent = '—';
+        roleEl.textContent = 'Aguardando sessão';
+        return;
+      }
+      nameEl.textContent = currentProfile?.full_name || currentUser.email || 'Usuário';
+      const role = currentProfile?.role || 'redator';
+      roleEl.textContent = ROLE_LABELS[role] || role;
+    }
+
+    function isAdminAuthenticated() {
+      return Boolean(currentUser && supabaseClient);
+    }
+
+    function toggleAdminLoginModal(show) {
+      const modal = document.getElementById('admin-login-modal');
+      if (!modal) return;
+      modal.classList.toggle('hidden', !show);
+      modal.classList.toggle('flex', show);
+      const err = document.getElementById('admin-login-error');
+      if (err) {
+        err.classList.add('hidden');
+        err.textContent = '';
+      }
+      if (show) {
+        const emailInput = document.getElementById('admin-login-email');
+        const passInput = document.getElementById('admin-login-password');
+        if (passInput) passInput.value = '';
+        if (emailInput && !emailInput.value) emailInput.focus();
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+
+    async function requestAdminAccess() {
+      if (!supabaseClient) {
+        showToast('Não foi possível conectar ao Supabase Auth.', 'error');
+        return;
+      }
+      if (isAdminAuthenticated()) {
+        switchView('admin');
+        return;
+      }
+      toggleAdminLoginModal(true);
+    }
+
+    async function handleAdminLogin(event) {
+      event.preventDefault();
+      if (!supabaseClient) {
+        showToast('Cliente Supabase indisponível.', 'error');
+        return;
+      }
+
+      const email = document.getElementById('admin-login-email').value.trim();
+      const password = document.getElementById('admin-login-password').value;
+      const errEl = document.getElementById('admin-login-error');
+      const submitBtn = document.getElementById('admin-login-submit');
+
+      if (errEl) {
+        errEl.classList.add('hidden');
+        errEl.textContent = '';
+      }
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-70');
+      }
+
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        await loadCurrentUser(data.user);
+        toggleAdminLoginModal(false);
+        switchView('admin');
+        showToast('Sessão editorial iniciada.', 'success');
+      } catch (err) {
+        const message = err?.message || 'Falha na autenticação.';
+        if (errEl) {
+          errEl.textContent = message;
+          errEl.classList.remove('hidden');
+        }
+        showToast(message, 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.classList.remove('opacity-70');
+        }
+      }
+    }
+
+    async function handleAdminLogout() {
+      try {
+        if (supabaseClient) {
+          await supabaseClient.auth.signOut();
+        }
+      } catch (e) {
+        console.warn('Erro ao encerrar sessão:', e);
+      }
+      currentUser = null;
+      currentProfile = null;
+      updateAdminUserUi();
+      switchView('public');
+      showToast('Sessão encerrada.', 'info');
+    }
+
+    // ==========================================
+    // 3. ROTEAMENTO & NAVEGAÇÃO
+    // ==========================================
+    function switchView(viewName) {
+      if (viewName === 'admin' && !isAdminAuthenticated()) {
+        toggleAdminLoginModal(true);
+        return;
+      }
+
+      currentView = viewName;
+      const publicView = document.getElementById('public-view');
+      const adminView = document.getElementById('admin-view');
+
+      if (viewName === 'public') {
+        publicView.classList.remove('hidden');
+        adminView.classList.add('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        renderPublicPortal();
+        renderPublicAds();
+      } else if (viewName === 'admin') {
+        publicView.classList.add('hidden');
+        adminView.classList.remove('hidden');
+        updateAdminUserUi();
+        renderAdminTabContent();
+      } else if (viewName === 'article-view') {
+        publicView.classList.remove('hidden');
+        adminView.classList.add('hidden');
+        renderSingleArticle();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      if (window.lucide) {
+        setTimeout(() => lucide.createIcons(), 50);
+      }
+    }
+
+    function navigateToHome() {
+      currentCategoryFilter = 'todas';
+      currentSearchQuery = '';
+      updateCategoryPills();
+      switchView('public');
+    }
+
+    function openArticle(articleId) {
+      readingArticleId = articleId;
+      // Incrementa views
+      const art = articles.find(a => a.id === articleId);
+      if (art) {
+        art.views_count = (art.views_count || 0) + 1;
+      }
+      switchView('article-view');
+    }
+
+    // ==========================================
+    // 4. RENDERIZAÇÃO: PORTAL PÚBLICO
+    // ==========================================
+    function renderPublicPortal() {
+      const container = document.getElementById('portal-view-container');
+      if (!container) return;
+
+      // Filtragem por categoria e busca
+      let filtered = articles.filter(art => art.status === 'publicada');
+
+      if (currentCategoryFilter !== 'todas') {
+        filtered = filtered.filter(art => 
+          art.category.toLowerCase().includes(currentCategoryFilter.toLowerCase())
+        );
+      }
+
+      if (currentSearchQuery.trim()) {
+        const query = currentSearchQuery.toLowerCase();
+        filtered = filtered.filter(art => 
+          art.title.toLowerCase().includes(query) ||
+          art.excerpt.toLowerCase().includes(query) ||
+          art.category.toLowerCase().includes(query) ||
+          art.author.toLowerCase().includes(query)
+        );
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="py-20 text-center max-w-md mx-auto">
+            <div class="w-12 h-12 rounded-full bg-editorial-gray flex items-center justify-center mx-auto text-gray-400 mb-3">
+              <i data-lucide="search-x" class="w-6 h-6"></i>
+            </div>
+            <h3 class="font-bold text-editorial-graphite text-lg mb-1">Nenhum sinal encontrado</h3>
+            <p class="text-xs text-editorial-text mb-4">Nenhum artigo corresponde à busca por "${escapeHtml(currentSearchQuery)}" na categoria selecionada.</p>
+            <button onclick="filterCategory('todas'); document.getElementById('desktop-search-input').value='';" class="text-xs bg-brand text-white px-4 py-2 rounded-lg font-medium">Limpar Filtros</button>
+          </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+        return;
+      }
+
+      const leadArticle = filtered[0];
+      const secondaryArticles = filtered.slice(1, 4);
+      const remainingArticles = filtered.slice(4);
+
+      let html = '';
+
+      // SEÇÃO 1 — MANCHETE PRINCIPAL (LEAD STORY)
+      html += `
+        <section class="mb-12">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-white rounded-3xl border border-editorial-border overflow-hidden hover:shadow-xl transition-all duration-300">
+            <div class="lg:col-span-7 relative h-72 sm:h-96 lg:h-[460px] overflow-hidden group">
+              <img src="${leadArticle.cover_image}" alt="${escapeHtml(leadArticle.title)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
+              <div class="absolute top-4 left-4 flex gap-2">
+                <span class="px-3 py-1 rounded-full text-[11px] font-bold bg-white text-editorial-graphite uppercase tracking-wider shadow">
+                  ${escapeHtml(leadArticle.category)}
+                </span>
+                ${renderClassificationBadge(leadArticle.editorial_classification)}
+              </div>
+              <div class="absolute bottom-3 left-4 text-[10px] text-white/80 font-mono">
+                Foto: ${escapeHtml(leadArticle.image_credit || 'Sinal & Ruído')}
+              </div>
+            </div>
+
+            <div class="lg:col-span-5 p-6 sm:p-8 lg:pr-10 space-y-4">
+              <div class="flex items-center gap-3 text-xs text-editorial-text">
+                <span class="font-medium text-brand">${escapeHtml(leadArticle.author)}</span>
+                <span>•</span>
+                <span>${formatDate(leadArticle.date)}</span>
+                <span>•</span>
+                <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> ${leadArticle.reading_time} min</span>
+              </div>
+
+              <h2 onclick="openArticle('${leadArticle.id}')" class="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-serif tracking-tight text-editorial-graphite hover:text-brand cursor-pointer transition leading-snug">
+                ${escapeHtml(leadArticle.title)}
+              </h2>
+
+              <p class="text-sm sm:text-base text-editorial-text leading-relaxed font-light">
+                ${escapeHtml(leadArticle.subtitle || leadArticle.excerpt)}
+              </p>
+
+              <!-- Box Sinal ou Ruído na manchete -->
+              <div class="p-4 rounded-xl bg-editorial-gray/60 border border-editorial-border/80 text-xs">
+                <span class="font-bold text-editorial-graphite block mb-1">Avaliação do Filtro:</span>
+                <p class="text-editorial-text line-clamp-2">${escapeHtml(leadArticle.editorial_justification || leadArticle.excerpt)}</p>
+              </div>
+
+              <div class="pt-2">
+                <button onclick="openArticle('${leadArticle.id}')" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand text-white hover:bg-brand-dark transition text-xs font-semibold shadow-md">
+                  <span>Ler Matéria Completa</span>
+                  <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      `;
+
+      // SEÇÃO 2 — DESTAQUES EDITORIAIS (GRID 3 COLUNAS)
+      if (secondaryArticles.length > 0) {
+        html += `
+          <section class="mb-14">
+            <div class="flex items-center justify-between mb-6 border-b border-editorial-border pb-3">
+              <h3 class="text-lg font-bold text-editorial-graphite tracking-tight flex items-center gap-2">
+                <span class="w-2.5 h-2.5 bg-brand rounded-full"></span>
+                Destaques em Investigação
+              </h3>
+              <span class="text-xs text-editorial-text font-serif italic">Rigor metodológico & Contexto</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              ${secondaryArticles.map(art => `
+                <article class="flex flex-col bg-white rounded-2xl border border-editorial-border overflow-hidden hover:shadow-lg transition-all duration-300">
+                  <div class="relative h-48 overflow-hidden group cursor-pointer" onclick="openArticle('${art.id}')">
+                    <img src="${art.cover_image}" alt="${escapeHtml(art.title)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                    <div class="absolute top-3 left-3 flex gap-1.5">
+                      <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white text-editorial-graphite shadow">
+                        ${escapeHtml(art.category)}
+                      </span>
+                      ${renderClassificationBadge(art.editorial_classification, true)}
+                    </div>
+                  </div>
+
+                  <div class="p-5 flex-1 flex flex-col justify-between space-y-3">
+                    <div class="space-y-2">
+                      <div class="flex items-center gap-2 text-[11px] text-editorial-text">
+                        <span>${escapeHtml(art.author)}</span>
+                        <span>•</span>
+                        <span>${art.reading_time} min</span>
+                      </div>
+                      <h4 onclick="openArticle('${art.id}')" class="font-serif font-bold text-lg text-editorial-graphite hover:text-brand cursor-pointer transition leading-snug line-clamp-2">
+                        ${escapeHtml(art.title)}
+                      </h4>
+                      <p class="text-xs text-editorial-text leading-relaxed line-clamp-3 font-light">
+                        ${escapeHtml(art.excerpt)}
+                      </p>
+                    </div>
+
+                    <div class="pt-3 border-t border-editorial-border/60 flex items-center justify-between text-xs">
+                      <button onclick="openArticle('${art.id}')" class="text-brand font-semibold hover:underline flex items-center gap-1">
+                        Análise <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                      </button>
+                      <span class="text-[10px] text-gray-400 font-mono">${art.views_count || 120} leituras</span>
+                    </div>
+                  </div>
+                </article>
+              `).join('')}
+            </div>
+          </section>
+        `;
+      }
+
+      // BANNER AD NO MEIO DO CONTEÚDO (RETÂNGULO / RESPONSIVO)
+      html += `
+        <div class="my-8" id="ad-slot-middle-content"></div>
+      `;
+
+      // SEÇÃO 4 — EXCLUSIVO DA MARCA: SINAL OU RUÍDO? (VEREDICTOS)
+      html += `
+        <section class="mb-14 p-6 sm:p-8 rounded-3xl bg-brand-light/30 border border-brand/20">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+            <div>
+              <div class="flex items-center gap-2 text-xs font-bold text-brand uppercase tracking-wider mb-1">
+                <i data-lucide="sliders-horizontal" class="w-4 h-4"></i> Filtro de Confiabilidade
+              </div>
+              <h3 class="text-2xl font-serif font-bold text-editorial-graphite">Sinal ou Ruído?</h3>
+              <p class="text-xs text-editorial-text">Nossa triagem epistemológica para as afirmações que dominaram o noticiário recente.</p>
+            </div>
+            <div class="flex items-center gap-2 text-[11px]">
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-white font-semibold text-brand shadow-sm"><span class="w-2 h-2 rounded-full bg-brand"></span> SINAL</span>
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-white font-semibold text-amber-600 shadow-sm"><span class="w-2 h-2 rounded-full bg-amber-500"></span> OBSERVAÇÃO</span>
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-white font-semibold text-red-600 shadow-sm"><span class="w-2 h-2 rounded-full bg-red-500"></span> RUÍDO</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            ${articles.slice(0, 3).map(art => `
+              <div class="bg-white rounded-xl p-4 border border-editorial-border shadow-sm flex flex-col justify-between space-y-3">
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] uppercase font-bold text-editorial-text">${escapeHtml(art.category)}</span>
+                    ${renderClassificationBadge(art.editorial_classification)}
+                  </div>
+                  <h5 onclick="openArticle('${art.id}')" class="font-serif font-bold text-sm text-editorial-graphite hover:text-brand cursor-pointer">
+                    ${escapeHtml(art.title)}
+                  </h5>
+                  <p class="text-[11px] text-editorial-text leading-relaxed">
+                    <strong>Veredicto:</strong> ${escapeHtml(art.editorial_justification || art.excerpt)}
+                  </p>
+                </div>
+                <button onclick="openArticle('${art.id}')" class="text-[11px] text-brand font-medium hover:underline text-left">
+                  Ler justificativa e evidências →
+                </button>
+              </div>
+            `).join('')}
+          </div>
+        </section>
+      `;
+
+      // SEÇÃO 6 — EXPLORANDO O FUTURO (CARDS TEMÁTICOS)
+      html += `
+        <section class="mb-14">
+          <div class="flex items-center justify-between mb-6 border-b border-editorial-border pb-3">
+            <h3 class="text-lg font-bold text-editorial-graphite tracking-tight flex items-center gap-2">
+              <span class="w-2.5 h-2.5 bg-editorial-graphite rounded-full"></span>
+              Fronteiras do Conhecimento
+            </h3>
+            <span class="text-xs text-editorial-text">Vetores de transformação civilizatória</span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div onclick="filterCategory('Inteligência Artificial')" class="cursor-pointer p-4 rounded-xl bg-white border border-editorial-border hover:border-brand transition text-center group">
+              <div class="w-10 h-10 rounded-xl bg-brand-light text-brand mx-auto flex items-center justify-center mb-2 group-hover:bg-brand group-hover:text-white transition">
+                <i data-lucide="cpu" class="w-5 h-5"></i>
+              </div>
+              <span class="font-bold text-xs text-editorial-graphite block">Inteligência Artificial</span>
+              <span class="text-[10px] text-editorial-text">Modelos e Limites</span>
+            </div>
+
+            <div onclick="filterCategory('Espaço')" class="cursor-pointer p-4 rounded-xl bg-white border border-editorial-border hover:border-brand transition text-center group">
+              <div class="w-10 h-10 rounded-xl bg-brand-light text-brand mx-auto flex items-center justify-center mb-2 group-hover:bg-brand group-hover:text-white transition">
+                <i data-lucide="orbit" class="w-5 h-5"></i>
+              </div>
+              <span class="font-bold text-xs text-editorial-graphite block">Espaço Profundo</span>
+              <span class="text-[10px] text-editorial-text">Astrobiologia</span>
+            </div>
+
+            <div onclick="filterCategory('Energia')" class="cursor-pointer p-4 rounded-xl bg-white border border-editorial-border hover:border-brand transition text-center group">
+              <div class="w-10 h-10 rounded-xl bg-brand-light text-brand mx-auto flex items-center justify-center mb-2 group-hover:bg-brand group-hover:text-white transition">
+                <i data-lucide="zap" class="w-5 h-5"></i>
+              </div>
+              <span class="font-bold text-xs text-editorial-graphite block">Fusão & Fissão</span>
+              <span class="text-[10px] text-editorial-text">Reatores SMR</span>
+            </div>
+
+            <div onclick="filterCategory('Biotecnologia')" class="cursor-pointer p-4 rounded-xl bg-white border border-editorial-border hover:border-brand transition text-center group">
+              <div class="w-10 h-10 rounded-xl bg-brand-light text-brand mx-auto flex items-center justify-center mb-2 group-hover:bg-brand group-hover:text-white transition">
+                <i data-lucide="dna" class="w-5 h-5"></i>
+              </div>
+              <span class="font-bold text-xs text-editorial-graphite block">Biotecnologia</span>
+              <span class="text-[10px] text-editorial-text">CRISPR & Senescência</span>
+            </div>
+
+            <div onclick="filterCategory('Física')" class="cursor-pointer p-4 rounded-xl bg-white border border-editorial-border hover:border-brand transition text-center group">
+              <div class="w-10 h-10 rounded-xl bg-brand-light text-brand mx-auto flex items-center justify-center mb-2 group-hover:bg-brand group-hover:text-white transition">
+                <i data-lucide="atom" class="w-5 h-5"></i>
+              </div>
+              <span class="font-bold text-xs text-editorial-graphite block">Física Quântica</span>
+              <span class="text-[10px] text-editorial-text">Emaranhamento</span>
+            </div>
+
+            <div onclick="filterCategory('Futuro')" class="cursor-pointer p-4 rounded-xl bg-white border border-editorial-border hover:border-brand transition text-center group">
+              <div class="w-10 h-10 rounded-xl bg-brand-light text-brand mx-auto flex items-center justify-center mb-2 group-hover:bg-brand group-hover:text-white transition">
+                <i data-lucide="globe" class="w-5 h-5"></i>
+              </div>
+              <span class="font-bold text-xs text-editorial-graphite block">Futuro Humano</span>
+              <span class="text-[10px] text-editorial-text">Riscos Existenciais</span>
+            </div>
+          </div>
+        </section>
+      `;
+
+      // SEÇÃO 3 — LISTAGEM CRONOLÓGICA (ÚLTIMAS MATÉRIAS + SIDEBAR COM ANÚNCIO)
+      html += `
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div class="lg:col-span-8 space-y-6">
+            <div class="border-b border-editorial-border pb-3 flex items-center justify-between">
+              <h3 class="text-lg font-bold text-editorial-graphite tracking-tight">Últimas Publicações & Desmistificações</h3>
+              <span class="text-xs text-editorial-text">Ordem cronológica</span>
+            </div>
+
+            <div class="space-y-6">
+              ${(remainingArticles.length > 0 ? remainingArticles : articles).map(art => `
+                <article class="flex flex-col sm:flex-row gap-5 p-4 rounded-2xl border border-editorial-border hover:border-brand/40 bg-white transition-all">
+                  <div class="sm:w-56 h-40 flex-shrink-0 relative rounded-xl overflow-hidden cursor-pointer" onclick="openArticle('${art.id}')">
+                    <img src="${art.cover_image}" alt="${escapeHtml(art.title)}" class="w-full h-full object-cover hover:scale-105 transition duration-500">
+                    <div class="absolute top-2 left-2">
+                      ${renderClassificationBadge(art.editorial_classification, true)}
+                    </div>
+                  </div>
+                  <div class="flex-1 flex flex-col justify-between space-y-2">
+                    <div>
+                      <div class="flex items-center gap-2 text-[11px] text-editorial-text mb-1">
+                        <span class="font-bold text-brand uppercase">${escapeHtml(art.category)}</span>
+                        <span>•</span>
+                        <span>${formatDate(art.date)}</span>
+                        <span>•</span>
+                        <span>${art.reading_time} min de leitura</span>
+                      </div>
+                      <h4 onclick="openArticle('${art.id}')" class="font-serif font-bold text-base sm:text-lg text-editorial-graphite hover:text-brand cursor-pointer leading-snug">
+                        ${escapeHtml(art.title)}
+                      </h4>
+                      <p class="text-xs text-editorial-text line-clamp-2 mt-1 font-light">
+                        ${escapeHtml(art.excerpt)}
+                      </p>
+                    </div>
+                    <div class="flex items-center justify-between pt-2 text-xs">
+                      <span class="text-[11px] text-gray-500">Por ${escapeHtml(art.author)}</span>
+                      <button onclick="openArticle('${art.id}')" class="text-brand font-semibold hover:underline">Ler artigo →</button>
+                    </div>
+                  </div>
+                </article>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- SIDEBAR DIREITA: ANÚNCIO (300x250) + MINI PAINEL DE TENDÊNCIAS -->
+          <aside class="lg:col-span-4 space-y-6">
+            <!-- SLOT DE ANÚNCIO SIDEBAR -->
+            <div id="ad-slot-sidebar"></div>
+
+            <!-- CURADORIA SINAL & RUÍDO -->
+            <div class="p-6 rounded-2xl bg-editorial-gray border border-editorial-border space-y-4">
+              <h4 class="font-bold text-sm text-editorial-graphite flex items-center gap-2">
+                <i data-lucide="shield-alert" class="w-4 h-4 text-brand"></i> O Que Estamos Questionando
+              </h4>
+              <p class="text-xs text-editorial-text leading-relaxed">
+                Nossos editores monitoram pré-prints no arXiv e bioRxiv antes que se tornem manchetes sensacionalistas em portais de massa.
+              </p>
+              <div class="space-y-2 pt-2 border-t border-editorial-border text-xs">
+                <a href="javascript:void(0)" onclick="filterCategory('Energia')" class="block p-2 rounded-lg bg-white hover:text-brand font-medium text-editorial-graphite">
+                  • O estado real dos reatores de fusão líquida
+                </a>
+                <a href="javascript:void(0)" onclick="filterCategory('Inteligência Artificial')" class="block p-2 rounded-lg bg-white hover:text-brand font-medium text-editorial-graphite">
+                  • Testes de benchmarks manipulados em LLMs
+                </a>
+                <a href="javascript:void(0)" onclick="filterCategory('Biotecnologia')" class="block p-2 rounded-lg bg-white hover:text-brand font-medium text-editorial-graphite">
+                  • Terapias celulares sem duplo-cego
+                </a>
+              </div>
+            </div>
+          </aside>
+        </section>
+      `;
+
+      container.innerHTML = html;
+      if (window.lucide) lucide.createIcons();
+      renderPublicAds();
+    }
+
+    // ==========================================
+    // 5. RENDERIZAÇÃO: PÁGINA INDIVIDUAL DA MATÉRIA
+    // ==========================================
+    function renderSingleArticle() {
+      const container = document.getElementById('portal-view-container');
+      const article = articles.find(a => a.id === readingArticleId) || articles[0];
+
+      if (!container || !article) return;
+
+      container.innerHTML = `
+        <article class="max-w-4xl mx-auto py-4">
+          
+          <!-- Breadcrumb & Back -->
+          <div class="flex items-center justify-between text-xs text-editorial-text mb-6">
+            <div class="flex items-center gap-2">
+              <button onclick="navigateToHome()" class="hover:text-brand flex items-center gap-1 font-medium">
+                <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Voltar ao portal
+              </button>
+              <span>/</span>
+              <span class="hover:text-brand cursor-pointer" onclick="filterCategory('${article.category}')">${escapeHtml(article.category)}</span>
+              <span>/</span>
+              <span class="text-gray-400 truncate max-w-[200px]">${escapeHtml(article.title)}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="copyArticleUrl()" class="p-1.5 rounded-lg border hover:bg-gray-50 text-gray-600" title="Copiar link da matéria">
+                <i data-lucide="share-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Header Editorial da Matéria -->
+          <header class="space-y-4 mb-8">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="px-3 py-1 rounded-full text-xs font-bold bg-brand-light text-brand uppercase tracking-wider">
+                ${escapeHtml(article.category)}
+              </span>
+              ${renderClassificationBadge(article.editorial_classification)}
+              <span class="text-xs text-editorial-text flex items-center gap-1">
+                <i data-lucide="clock" class="w-3.5 h-3.5"></i> ${article.reading_time} min de leitura
+              </span>
+            </div>
+
+            <h1 class="text-3xl sm:text-5xl font-extrabold font-serif tracking-tight text-editorial-graphite leading-tight">
+              ${escapeHtml(article.title)}
+            </h1>
+
+            <p class="text-lg sm:text-xl text-editorial-text font-light leading-relaxed">
+              ${escapeHtml(article.subtitle || article.excerpt)}
+            </p>
+
+            <div class="pt-4 border-t border-editorial-border flex flex-wrap items-center justify-between gap-4 text-xs">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-brand-light text-brand font-bold flex items-center justify-center font-serif text-sm">
+                  ${article.author.charAt(0)}
+                </div>
+                <div>
+                  <div class="font-bold text-editorial-graphite">${escapeHtml(article.author)}</div>
+                  <div class="text-editorial-text text-[11px]">${escapeHtml(article.author_role || 'Pesquisador & Editor')}</div>
+                </div>
+              </div>
+
+              <div class="text-right text-editorial-text text-[11px]">
+                <div>Publicado em: <strong>${formatDate(article.date)}</strong></div>
+                <div class="text-gray-400">${article.views_count || 140} leituras registradas</div>
+              </div>
+            </div>
+          </header>
+
+          <!-- Imagem de Capa com Crédito -->
+          <figure class="mb-10 rounded-3xl overflow-hidden border border-editorial-border bg-editorial-gray">
+            <img src="${article.cover_image}" alt="${escapeHtml(article.title)}" class="w-full max-h-[500px] object-cover">
+            ${article.cover_caption || article.image_credit ? `
+              <figcaption class="p-3 text-xs text-editorial-text border-t border-editorial-border flex justify-between">
+                <span>${escapeHtml(article.cover_caption || '')}</span>
+                <span class="text-gray-400 font-mono">Crédito: ${escapeHtml(article.image_credit || 'Divulgação')}</span>
+              </figcaption>
+            ` : ''}
+          </figure>
+
+          <!-- CAIXA EDITORIAL OBRIGATÓRIA: AFINAL, ISSO É SINAL OU RUÍDO? -->
+          <aside class="mb-10 p-6 rounded-2xl border-2 border-brand/40 bg-brand-light/20 space-y-4">
+            <div class="flex items-center justify-between border-b border-brand/20 pb-3">
+              <div class="flex items-center gap-2">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-brand"></i>
+                <h3 class="font-bold text-sm tracking-wider uppercase text-editorial-graphite">Afinal, isso é Sinal ou Ruído?</h3>
+              </div>
+              ${renderClassificationBadge(article.editorial_classification)}
+            </div>
+            
+            <div class="space-y-3 text-xs sm:text-sm text-editorial-graphite leading-relaxed">
+              <div>
+                <strong class="text-brand">Justificativa Editorial:</strong>
+                <p class="mt-0.5 text-editorial-text">${escapeHtml(article.editorial_justification || 'Análise conduzida pelo corpo científico com base nos relatórios técnicos divulgados.')}</p>
+              </div>
+              <div>
+                <strong class="text-brand">Evidências Consideradas:</strong>
+                <p class="mt-0.5 text-editorial-text">Dados empíricos de reprodutibilidade, conformidade com as leis termodinâmicas e consistência estatística.</p>
+              </div>
+              <div>
+                <strong class="text-brand">Limitações da Informação:</strong>
+                <p class="mt-0.5 text-editorial-text">Esta classificação não é verdade definitiva e pode ser atualizada à medida que revisões por pares independentes forem publicadas.</p>
+              </div>
+            </div>
+          </aside>
+
+          <!-- CORPO DA MATÉRIA COM TIPOGRAFIA EDITORIAL -->
+          <div class="prose max-w-none text-editorial-graphite leading-relaxed text-base sm:text-lg font-sans space-y-6 mb-12">
+            ${article.content}
+          </div>
+
+          <!-- BANNER AD NO MEIO DA MATÉRIA (RETÂNGULO / 300x250 ou RESPONSIVO) -->
+          <div class="my-10 p-4 rounded-2xl bg-editorial-gray border border-editorial-border text-center" id="ad-slot-inside-article">
+            <span class="text-[9px] uppercase tracking-wider text-gray-400 block mb-2 font-mono">PUBLICIDADE</span>
+            <div class="flex justify-center">
+              <a href="https://example.com/quantum" target="_blank" rel="noopener" class="inline-block rounded-xl overflow-hidden shadow-sm hover:opacity-95 transition">
+                <img src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=728&h=120&q=80" alt="Supercomputação Quântica" class="w-full max-h-36 object-cover">
+              </a>
+            </div>
+          </div>
+
+          <!-- FONTES E REFERÊNCIAS CIENTÍFICAS -->
+          ${article.sources && article.sources.length > 0 ? `
+            <section class="border-t border-editorial-border pt-6 mb-12">
+              <h4 class="font-bold text-sm text-editorial-graphite mb-3 flex items-center gap-2">
+                <i data-lucide="book-open" class="w-4 h-4 text-brand"></i> Fontes e Artigos Originais (Peer-Reviewed)
+              </h4>
+              <ul class="space-y-2 text-xs">
+                ${article.sources.map(s => `
+                  <li class="flex items-center gap-2 text-brand hover:underline">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5 flex-shrink-0 text-gray-400"></i>
+                    <a href="${s.url}" target="_blank" rel="noopener">${escapeHtml(s.title)}</a>
+                  </li>
+                `).join('')}
+              </ul>
+            </section>
+          ` : ''}
+
+          <!-- AÇÕES DE COMPARTILHAMENTO -->
+          <div class="border-y border-editorial-border py-4 my-8 flex items-center justify-between text-xs">
+            <span class="font-semibold text-editorial-graphite">Compartilhe esta análise:</span>
+            <div class="flex items-center gap-2">
+              <button onclick="shareArticle('twitter')" class="px-3 py-1.5 rounded-lg border hover:bg-gray-50 flex items-center gap-1.5">
+                <i data-lucide="twitter" class="w-3.5 h-3.5 text-sky-500"></i> X / Twitter
+              </button>
+              <button onclick="shareArticle('linkedin')" class="px-3 py-1.5 rounded-lg border hover:bg-gray-50 flex items-center gap-1.5">
+                <i data-lucide="linkedin" class="w-3.5 h-3.5 text-blue-700"></i> LinkedIn
+              </button>
+              <button onclick="copyArticleUrl()" class="px-3 py-1.5 rounded-lg border hover:bg-gray-50 flex items-center gap-1.5">
+                <i data-lucide="link" class="w-3.5 h-3.5 text-gray-600"></i> Copiar Link
+              </button>
+            </div>
+          </div>
+
+          <!-- MATÉRIAS RELACIONADAS -->
+          <section class="my-12">
+            <h3 class="text-xl font-bold font-serif text-editorial-graphite mb-6">Continue Investigando</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              ${articles.filter(a => a.id !== article.id).slice(0, 2).map(art => `
+                <div onclick="openArticle('${art.id}')" class="p-4 rounded-xl border border-editorial-border hover:border-brand transition cursor-pointer bg-white flex gap-4">
+                  <img src="${art.cover_image}" alt="${escapeHtml(art.title)}" class="w-24 h-24 rounded-lg object-cover flex-shrink-0">
+                  <div class="space-y-1">
+                    <span class="text-[10px] uppercase font-bold text-brand">${escapeHtml(art.category)}</span>
+                    <h5 class="font-serif font-bold text-sm text-editorial-graphite line-clamp-2">${escapeHtml(art.title)}</h5>
+                    <span class="text-[10px] text-gray-400">${art.reading_time} min</span>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </section>
+
+        </article>
+      `;
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // ==========================================
+    // 6. MOTOR DE ANÚNCIOS (AD SERVER ENGINE)
+    // ==========================================
+    function renderPublicAds() {
+      // Injeta anúncio "below_menu"
+      renderAdSlot('below_menu', 'ad-slot-below-menu');
+      // Injeta anúncio "before_footer"
+      renderAdSlot('before_footer', 'ad-slot-before-footer');
+      // Injeta anúncio "sidebar_right"
+      renderAdSlot('sidebar_right', 'ad-slot-sidebar');
+      // Injeta anúncio "between_sections" ou "middle_content"
+      renderAdSlot('between_sections', 'ad-slot-middle-content');
+    }
+
+    function renderAdSlot(placement, targetDomId) {
+      const container = document.getElementById(targetDomId);
+      if (!container) return;
+
+      const activeAd = advertisements.find(ad => ad.placement === placement && ad.status === 'ativo');
+
+      if (!activeAd) {
+        container.innerHTML = '';
+        return;
+      }
+
+      // Registro de impressão (lazy/única por sessão)
+      activeAd.impressions_count = (activeAd.impressions_count || 0) + 1;
+
+      container.innerHTML = `
+        <div class="w-full flex flex-col items-center my-4">
+          <div class="w-full flex items-center justify-between text-[9px] uppercase tracking-widest text-gray-400 font-mono mb-1 max-w-full">
+            <span>PUBLICIDADE • ${escapeHtml(activeAd.advertiser_name)}</span>
+            <span class="hover:underline cursor-pointer" onclick="showAdTransparencyModal()">Por que este anúncio?</span>
+          </div>
+          <a href="${activeAd.destination_url}" target="_blank" rel="noopener nofollow" onclick="trackAdClick('${activeAd.id}')" class="block w-full overflow-hidden rounded-2xl border border-editorial-border shadow-sm hover:opacity-95 transition">
+            <!-- Imagem Responsiva (Desktop / Mobile) -->
+            <picture class="w-full block">
+              <source media="(max-width: 640px)" srcset="${activeAd.image_mobile || activeAd.image_desktop}">
+              <img src="${activeAd.image_desktop}" alt="${escapeHtml(activeAd.alt_text || activeAd.campaign_name)}" class="w-full object-cover max-h-64 sm:max-h-72">
+            </picture>
+          </a>
+        </div>
+      `;
+    }
+
+    function trackAdClick(adId) {
+      const ad = advertisements.find(a => a.id === adId);
+      if (ad) {
+        ad.clicks_count = (ad.clicks_count || 0) + 1;
+      }
+    }
+
+    // ==========================================
+    // 7. PAINEL ADMINISTRATIVO (/admin) CONTROLLERS
+    // ==========================================
+    function switchAdminTab(tabName) {
+      adminActiveTab = tabName;
+      // Atualiza botões
+      document.querySelectorAll('.admin-nav-btn').forEach(btn => {
+        btn.classList.remove('bg-brand', 'text-white');
+        btn.classList.add('text-gray-400', 'hover:text-white', 'hover:bg-white/5');
+      });
+      event?.currentTarget?.classList?.add('bg-brand', 'text-white');
+      event?.currentTarget?.classList?.remove('text-gray-400');
+
+      renderAdminTabContent();
+    }
+
+    function renderAdminTabContent() {
+      const container = document.getElementById('admin-tab-content');
+      const titleEl = document.getElementById('admin-current-section-title');
+      if (!container) return;
+
+      if (adminActiveTab === 'dashboard') {
+        if (titleEl) titleEl.textContent = 'Dashboard Editorial';
+        renderAdminDashboard(container);
+      } else if (adminActiveTab === 'articles') {
+        if (titleEl) titleEl.textContent = 'Gestão de Matérias';
+        renderAdminArticles(container);
+      } else if (adminActiveTab === 'categories') {
+        if (titleEl) titleEl.textContent = 'Gestão de Categorias e Eixos';
+        renderAdminCategories(container);
+      } else if (adminActiveTab === 'advertisements') {
+        if (titleEl) titleEl.textContent = 'Gestão de Anúncios e Campanhas';
+        renderAdminAds(container);
+      } else if (adminActiveTab === 'media') {
+        if (titleEl) titleEl.textContent = 'Biblioteca de Mídia (Supabase Storage)';
+        renderAdminMedia(container);
+      } else if (adminActiveTab === 'newsletter') {
+        if (titleEl) titleEl.textContent = 'Assinantes da Newsletter';
+        renderAdminNewsletter(container);
+      } else if (adminActiveTab === 'users') {
+        if (titleEl) titleEl.textContent = 'Usuários & Papéis (RBAC)';
+        renderAdminUsers(container);
+      }
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // 7.1 DASHBOARD
+    function renderAdminDashboard(container) {
+      const publishedCount = articles.filter(a => a.status === 'publicada').length;
+      const draftCount = articles.filter(a => a.status === 'rascunho').length;
+      const scheduledCount = articles.filter(a => a.status === 'agendada').length;
+      const activeAds = advertisements.filter(a => a.status === 'ativo').length;
+      const totalViews = articles.reduce((acc, a) => acc + (a.views_count || 0), 0);
+
+      container.innerHTML = `
+        <div class="space-y-6">
+          <!-- Banner de Status de Conexão -->
+          <div class="p-4 rounded-xl border border-editorial-border bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <span class="w-3 h-3 rounded-full ${isAdminAuthenticated() ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
+              <div>
+                <span class="text-xs font-bold text-editorial-graphite">
+                  ${isAdminAuthenticated() ? 'Sessão autenticada no Supabase Auth' : 'Sem sessão editorial'}
+                </span>
+                <p class="text-[11px] text-editorial-text">
+                  ${currentUser?.email || 'Faça login para operar a redação.'}
+                  ${currentProfile?.role ? ` · ${ROLE_LABELS[currentProfile.role] || currentProfile.role}` : currentUser ? ' · perfil ainda não criado em profiles' : ''}
+                </p>
+              </div>
+            </div>
+            <button onclick="handleAdminLogout()" class="px-3 py-1.5 rounded-lg border text-xs font-medium text-editorial-graphite hover:bg-gray-50">
+              Encerrar sessão
+            </button>
+          </div>
+
+          <!-- Cards Estatísticos -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-editorial-border shadow-sm">
+              <div class="flex items-center justify-between text-gray-400 mb-2">
+                <span class="text-xs font-semibold uppercase">Matérias Publicadas</span>
+                <i data-lucide="check-circle" class="w-4 h-4 text-brand"></i>
+              </div>
+              <div class="text-2xl font-bold text-editorial-graphite">${publishedCount}</div>
+              <span class="text-[10px] text-emerald-600 font-medium">100% no ar</span>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-editorial-border shadow-sm">
+              <div class="flex items-center justify-between text-gray-400 mb-2">
+                <span class="text-xs font-semibold uppercase">Rascunhos / Revisão</span>
+                <i data-lucide="file-edit" class="w-4 h-4 text-amber-500"></i>
+              </div>
+              <div class="text-2xl font-bold text-editorial-graphite">${draftCount}</div>
+              <span class="text-[10px] text-gray-500">Em preparação editorial</span>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-editorial-border shadow-sm">
+              <div class="flex items-center justify-between text-gray-400 mb-2">
+                <span class="text-xs font-semibold uppercase">Campanhas de Anúncios</span>
+                <i data-lucide="megaphone" class="w-4 h-4 text-brand-dark"></i>
+              </div>
+              <div class="text-2xl font-bold text-editorial-graphite">${activeAds}</div>
+              <span class="text-[10px] text-emerald-600 font-medium">${advertisements.length} cadastradas</span>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-editorial-border shadow-sm">
+              <div class="flex items-center justify-between text-gray-400 mb-2">
+                <span class="text-xs font-semibold uppercase">Leituras Totais</span>
+                <i data-lucide="bar-chart-3" class="w-4 h-4 text-blue-600"></i>
+              </div>
+              <div class="text-2xl font-bold text-editorial-graphite">${totalViews.toLocaleString('pt-BR')}</div>
+              <span class="text-[10px] text-gray-400">Engajamento orgânico</span>
+            </div>
+          </div>
+
+          <!-- Tabela de Matérias Recentes no Admin -->
+          <div class="bg-white rounded-2xl border border-editorial-border overflow-hidden">
+            <div class="p-5 border-b border-editorial-border flex items-center justify-between">
+              <h3 class="font-bold text-sm text-editorial-graphite">Produções Editoriais Recentes</h3>
+              <button onclick="openArticleEditorModal()" class="text-xs text-brand font-semibold hover:underline">+ Nova Matéria</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs text-left">
+                <thead class="bg-gray-50 text-gray-500 border-b">
+                  <tr>
+                    <th class="p-3">Título / Tema</th>
+                    <th class="p-3">Categoria</th>
+                    <th class="p-3">Veredicto</th>
+                    <th class="p-3">Status</th>
+                    <th class="p-3">Leituras</th>
+                    <th class="p-3 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  ${articles.map(art => `
+                    <tr class="hover:bg-gray-50">
+                      <td class="p-3">
+                        <div class="font-semibold text-editorial-graphite truncate max-w-xs">${escapeHtml(art.title)}</div>
+                        <div class="text-[10px] text-gray-400 font-mono">${art.slug}</div>
+                      </td>
+                      <td class="p-3">
+                        <span class="px-2 py-0.5 rounded bg-gray-100 text-editorial-graphite font-medium text-[10px]">
+                          ${escapeHtml(art.category)}
+                        </span>
+                      </td>
+                      <td class="p-3">
+                        ${renderClassificationBadge(art.editorial_classification, true)}
+                      </td>
+                      <td class="p-3">
+                        <span class="inline-flex items-center gap-1 text-[11px] font-medium ${art.status === 'publicada' ? 'text-emerald-700' : 'text-amber-700'}">
+                          <span class="w-1.5 h-1.5 rounded-full ${art.status === 'publicada' ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
+                          ${art.status.toUpperCase()}
+                        </span>
+                      </td>
+                      <td class="p-3 font-mono text-gray-500">${art.views_count || 0}</td>
+                      <td class="p-3 text-right space-x-1">
+                        <button onclick="editArticle('${art.id}')" class="p-1 hover:bg-gray-200 rounded text-gray-600" title="Editar"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="duplicateArticle('${art.id}')" class="p-1 hover:bg-gray-200 rounded text-gray-600" title="Duplicar"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="deleteArticle('${art.id}')" class="p-1 hover:bg-red-50 rounded text-red-600" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 7.2 GESTÃO DE MATÉRIAS
+    function renderAdminArticles(container) {
+      container.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-xl border border-editorial-border">
+            <div class="relative w-full sm:w-72">
+              <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
+              <input type="text" onkeyup="filterAdminArticles(this.value)" placeholder="Buscar matéria por título..." class="w-full text-xs pl-9 pr-3 py-2 border rounded-lg outline-none focus:ring-1 focus:ring-brand">
+            </div>
+            <button onclick="openArticleEditorModal()" class="w-full sm:w-auto px-4 py-2 bg-brand text-white rounded-lg text-xs font-semibold hover:bg-brand-dark flex items-center justify-center gap-1.5">
+              <i data-lucide="plus" class="w-4 h-4"></i> Nova Matéria
+            </button>
+          </div>
+
+          <div class="bg-white rounded-xl border border-editorial-border overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs text-left" id="admin-articles-table">
+                <thead class="bg-gray-50 text-gray-500 border-b">
+                  <tr>
+                    <th class="p-3">Matéria</th>
+                    <th class="p-3">Eixo</th>
+                    <th class="p-3">Autor</th>
+                    <th class="p-3">Veredicto</th>
+                    <th class="p-3">Status</th>
+                    <th class="p-3 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  ${articles.map(art => `
+                    <tr class="hover:bg-gray-50">
+                      <td class="p-3">
+                        <div class="font-bold text-editorial-graphite max-w-sm truncate">${escapeHtml(art.title)}</div>
+                        <div class="text-[10px] text-gray-400">${art.reading_time} min • Criado em ${art.date}</div>
+                      </td>
+                      <td class="p-3"><span class="px-2 py-0.5 rounded bg-brand-light text-brand font-medium text-[10px]">${escapeHtml(art.category)}</span></td>
+                      <td class="p-3 text-gray-600">${escapeHtml(art.author)}</td>
+                      <td class="p-3">${renderClassificationBadge(art.editorial_classification, true)}</td>
+                      <td class="p-3">
+                        <span class="text-[10px] font-bold uppercase ${art.status === 'publicada' ? 'text-emerald-600' : 'text-amber-600'}">
+                          ${art.status}
+                        </span>
+                      </td>
+                      <td class="p-3 text-right space-x-1">
+                        <button onclick="openArticle('${art.id}')" class="p-1 hover:bg-gray-100 rounded text-blue-600" title="Ver no Portal"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="editArticle('${art.id}')" class="p-1 hover:bg-gray-100 rounded text-gray-600" title="Editar"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="duplicateArticle('${art.id}')" class="p-1 hover:bg-gray-100 rounded text-gray-600" title="Duplicar"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="deleteArticle('${art.id}')" class="p-1 hover:bg-red-50 rounded text-red-600" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 7.3 GESTÃO DE CATEGORIAS
+    function renderAdminCategories(container) {
+      container.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-editorial-border">
+            <div>
+              <h3 class="font-bold text-sm text-editorial-graphite">Eixos Temáticos</h3>
+              <p class="text-xs text-editorial-text">Categorias editoriais ativas no menu de navegação e filtros</p>
+            </div>
+            <button onclick="openCategoryModal()" class="px-3 py-2 bg-brand text-white rounded-lg text-xs font-semibold hover:bg-brand-dark flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-4 h-4"></i> Nova Categoria
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            ${categoriesList.map(cat => `
+              <div class="p-4 bg-white rounded-xl border border-editorial-border shadow-sm flex items-center justify-between">
+                <div>
+                  <h4 class="font-bold text-sm text-editorial-graphite">${escapeHtml(cat.name)}</h4>
+                  <span class="text-[11px] text-gray-400 font-mono">/${cat.slug}</span>
+                  <div class="text-[10px] text-brand font-medium mt-1">12 matérias ativas</div>
+                </div>
+                <div class="flex items-center gap-1">
+                  <button onclick="editCategory('${cat.id}')" class="p-1.5 hover:bg-gray-100 rounded text-gray-500"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                  <button onclick="deleteCategory('${cat.id}')" class="p-1.5 hover:bg-red-50 rounded text-red-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // 7.4 GESTÃO DE ANÚNCIOS (BANNERS & FORMATOS IAB)
+    function renderAdminAds(container) {
+      container.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-xl border border-editorial-border">
+            <div>
+              <h3 class="font-bold text-sm text-editorial-graphite">Campanhas & Monetização</h3>
+              <p class="text-xs text-editorial-text">Formatos 970x250, 728x90, 300x250 e responsivos com CTR em tempo real</p>
+            </div>
+            <button onclick="openAdModal()" class="px-4 py-2 bg-brand text-white rounded-lg text-xs font-semibold hover:bg-brand-dark flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-4 h-4"></i> Cadastrar Anúncio
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${advertisements.map(ad => {
+              const ctr = ad.impressions_count > 0 ? ((ad.clicks_count / ad.impressions_count) * 100).toFixed(2) : '0.00';
+              return `
+                <div class="bg-white rounded-2xl border border-editorial-border p-5 space-y-3 flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase bg-editorial-gray text-editorial-graphite">
+                        ${ad.format.replace('_', ' ')}
+                      </span>
+                      <span class="inline-flex items-center gap-1 text-[11px] font-bold ${ad.status === 'ativo' ? 'text-emerald-600' : 'text-gray-400'}">
+                        <span class="w-1.5 h-1.5 rounded-full ${ad.status === 'ativo' ? 'bg-emerald-500' : 'bg-gray-400'}"></span>
+                        ${ad.status.toUpperCase()}
+                      </span>
+                    </div>
+
+                    <h4 class="font-bold text-base text-editorial-graphite">${escapeHtml(ad.campaign_name)}</h4>
+                    <p class="text-xs text-editorial-text mb-3">Anunciante: <strong>${escapeHtml(ad.advertiser_name)}</strong></p>
+
+                    <!-- Preview da Imagem -->
+                    <div class="rounded-lg overflow-hidden border border-gray-200 bg-gray-50 h-28 relative">
+                      <img src="${ad.image_desktop}" alt="${escapeHtml(ad.alt_text || '')}" class="w-full h-full object-cover">
+                      <span class="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded font-mono">Posição: ${ad.placement}</span>
+                    </div>
+                  </div>
+
+                  <!-- Métricas de Desempenho (Impressões, Cliques, CTR) -->
+                  <div class="pt-3 border-t grid grid-cols-3 gap-2 text-center text-xs">
+                    <div class="bg-gray-50 p-2 rounded">
+                      <span class="text-gray-400 block text-[10px]">Impressões</span>
+                      <strong class="text-editorial-graphite">${(ad.impressions_count || 0).toLocaleString()}</strong>
+                    </div>
+                    <div class="bg-gray-50 p-2 rounded">
+                      <span class="text-gray-400 block text-[10px]">Cliques</span>
+                      <strong class="text-brand">${(ad.clicks_count || 0).toLocaleString()}</strong>
+                    </div>
+                    <div class="bg-gray-50 p-2 rounded">
+                      <span class="text-gray-400 block text-[10px]">CTR</span>
+                      <strong class="text-emerald-600">${ctr}%</strong>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-between pt-2">
+                    <span class="text-[10px] text-gray-400">Até ${ad.end_date}</span>
+                    <div class="flex gap-2">
+                      <button onclick="toggleAdStatus('${ad.id}')" class="px-2.5 py-1 text-xs border rounded hover:bg-gray-50 text-gray-600 font-medium">
+                        ${ad.status === 'ativo' ? 'Pausar' : 'Ativar'}
+                      </button>
+                      <button onclick="deleteAd('${ad.id}')" class="p-1 hover:bg-red-50 text-red-600 rounded">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // 7.5 BIBLIOTECA DE MÍDIA
+    function renderAdminMedia(container) {
+      container.innerHTML = `
+        <div class="space-y-4">
+          <div class="bg-white p-5 rounded-2xl border border-editorial-border space-y-4">
+            <div class="flex justify-between items-center">
+              <div>
+                <h3 class="font-bold text-sm text-editorial-graphite">Buckets de Armazenamento (Supabase Storage)</h3>
+                <p class="text-xs text-editorial-text">Imagens de artigos, banners publicitários e mídia editorial</p>
+              </div>
+              <button onclick="triggerSimulatedUpload()" class="px-3.5 py-2 bg-brand text-white rounded-lg text-xs font-semibold hover:bg-brand-dark flex items-center gap-1.5">
+                <i data-lucide="upload" class="w-4 h-4"></i> Fazer Upload
+              </button>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div class="p-3 border rounded-xl bg-gray-50">
+                <span class="font-mono text-xs font-bold text-brand block">article-images</span>
+                <span class="text-[10px] text-gray-500">Público • WebP / AVIF</span>
+              </div>
+              <div class="p-3 border rounded-xl bg-gray-50">
+                <span class="font-mono text-xs font-bold text-brand block">advertisement-banners</span>
+                <span class="text-[10px] text-gray-500">Público • Multi-device</span>
+              </div>
+              <div class="p-3 border rounded-xl bg-gray-50">
+                <span class="font-mono text-xs font-bold text-brand block">editorial-media</span>
+                <span class="text-[10px] text-gray-500">Privado • Documentos</span>
+              </div>
+              <div class="p-3 border rounded-xl bg-gray-50">
+                <span class="font-mono text-xs font-bold text-brand block">avatars</span>
+                <span class="text-[10px] text-gray-500">Público • Perfis</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            ${articles.map(art => `
+              <div class="bg-white rounded-xl border border-editorial-border p-2 space-y-2 group">
+                <div class="h-32 rounded-lg overflow-hidden bg-gray-100">
+                  <img src="${art.cover_image}" alt="Mídia" class="w-full h-full object-cover group-hover:scale-105 transition">
+                </div>
+                <div class="flex items-center justify-between text-[10px]">
+                  <span class="truncate max-w-[120px] text-gray-500">${art.slug}.jpg</span>
+                  <button onclick="copyToClipboard('${art.cover_image}')" class="text-brand hover:underline font-semibold">Copiar URL</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // 7.6 NEWSLETTER
+    function renderAdminNewsletter(container) {
+      container.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-editorial-border">
+            <div>
+              <h3 class="font-bold text-sm text-editorial-graphite">Inscritos no Boletim Semanal (${newsletterSubscribers.length})</h3>
+              <p class="text-xs text-editorial-text">Consentimento registrado conforme diretrizes de privacidade</p>
+            </div>
+            <button onclick="exportNewsletterCsv()" class="px-3.5 py-2 border rounded-lg text-xs font-semibold hover:bg-gray-50 flex items-center gap-1.5 text-editorial-graphite">
+              <i data-lucide="download" class="w-4 h-4"></i> Exportar CSV
+            </button>
+          </div>
+
+          <div class="bg-white rounded-xl border border-editorial-border overflow-hidden">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-gray-50 text-gray-500 border-b">
+                <tr>
+                  <th class="p-3">E-mail</th>
+                  <th class="p-3">Data de Inscrição</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                ${newsletterSubscribers.map(sub => `
+                  <tr class="hover:bg-gray-50">
+                    <td class="p-3 font-medium text-editorial-graphite">${escapeHtml(sub.email)}</td>
+                    <td class="p-3 text-gray-500">${sub.date}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 font-bold uppercase">Ativo</span></td>
+                    <td class="p-3 text-right">
+                      <button onclick="deleteSubscriber('${sub.id}')" class="text-red-500 hover:underline">Remover</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // 7.7 USUÁRIOS & PERMISSÕES
+    function renderAdminUsers(container) {
+      container.innerHTML = `
+        <div class="space-y-4">
+          <div class="bg-white p-5 rounded-2xl border border-editorial-border space-y-4">
+            <h3 class="font-bold text-sm text-editorial-graphite">Estrutura de Permissões Supabase Auth</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div class="p-4 border rounded-xl bg-gray-50">
+                <span class="font-bold text-editorial-graphite block mb-1">Superadministrador</span>
+                <p class="text-gray-500 text-[11px]">Acesso irrestrito a configurações, SQL, exclusão de usuários e faturamento.</p>
+              </div>
+              <div class="p-4 border rounded-xl bg-gray-50">
+                <span class="font-bold text-editorial-graphite block mb-1">Editor</span>
+                <p class="text-gray-500 text-[11px]">Revisão de textos, publicação de matérias, gestão de anúncios e vereditos.</p>
+              </div>
+              <div class="p-4 border rounded-xl bg-gray-50">
+                <span class="font-bold text-editorial-graphite block mb-1">Redator</span>
+                <p class="text-gray-500 text-[11px]">Redação de novas pautas e edição exclusiva das próprias matérias.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==========================================
+    // 8. CRUD HANDLERS (MATÉRIAS, ANÚNCIOS, ETC)
+    // ==========================================
+    function openArticleEditorModal(articleToEdit = null) {
+      const modal = document.getElementById('article-modal');
+      const form = document.getElementById('article-form');
+      form.reset();
+
+      if (articleToEdit) {
+        document.getElementById('article-modal-title').textContent = 'Editar Matéria';
+        document.getElementById('article-form-id').value = articleToEdit.id;
+        document.getElementById('art-title').value = articleToEdit.title;
+        document.getElementById('art-subtitle').value = articleToEdit.subtitle || '';
+        document.getElementById('art-slug').value = articleToEdit.slug;
+        document.getElementById('art-category').value = articleToEdit.category;
+        document.getElementById('art-author').value = articleToEdit.author;
+        document.getElementById('art-status').value = articleToEdit.status;
+        document.getElementById('art-reading-time').value = articleToEdit.reading_time || 5;
+        document.getElementById('art-cover').value = articleToEdit.cover_image;
+        document.getElementById('art-credit').value = articleToEdit.image_credit || '';
+        document.getElementById('art-excerpt').value = articleToEdit.excerpt;
+        document.getElementById('art-content').value = articleToEdit.content;
+        document.getElementById('art-justification').value = articleToEdit.editorial_justification || '';
+        
+        // Radio classification
+        const rad = document.querySelector(`input[name="art-classification"][value="${articleToEdit.editorial_classification}"]`);
+        if (rad) rad.checked = true;
+      } else {
+        document.getElementById('article-modal-title').textContent = 'Compor Nova Matéria';
+        document.getElementById('article-form-id').value = '';
+        document.getElementById('art-reading-time').value = 5;
+      }
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeArticleEditorModal() {
+      const modal = document.getElementById('article-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function handleSaveArticle(e) {
+      e.preventDefault();
+      const id = document.getElementById('article-form-id').value;
+      const title = document.getElementById('art-title').value.trim();
+      const subtitle = document.getElementById('art-subtitle').value.trim();
+      const slug = document.getElementById('art-slug').value.trim();
+      const category = document.getElementById('art-category').value;
+      const author = document.getElementById('art-author').value.trim();
+      const status = document.getElementById('art-status').value;
+      const reading_time = parseInt(document.getElementById('art-reading-time').value, 10) || 5;
+      const cover_image = document.getElementById('art-cover').value.trim();
+      const image_credit = document.getElementById('art-credit').value.trim();
+      const excerpt = document.getElementById('art-excerpt').value.trim();
+      const content = document.getElementById('art-content').value.trim();
+      const editorial_justification = document.getElementById('art-justification').value.trim();
+      const editorial_classification = document.querySelector('input[name="art-classification"]:checked')?.value || 'sinal';
+
+      if (id) {
+        // Edição
+        const index = articles.findIndex(a => a.id === id);
+        if (index !== -1) {
+          articles[index] = {
+            ...articles[index],
+            title, subtitle, slug, category, author, status, reading_time,
+            cover_image, image_credit, excerpt, content, editorial_justification,
+            editorial_classification
+          };
+          showToast('Matéria atualizada com sucesso!', 'success');
+        }
+      } else {
+        // Criação
+        const newArt = {
+          id: 'art-' + Date.now(),
+          title, subtitle, slug, category, author, status, reading_time,
+          cover_image, image_credit, excerpt, content, editorial_justification,
+          editorial_classification,
+          date: new Date().toISOString().split('T')[0],
+          views_count: 0
+        };
+        articles.unshift(newArt);
+        showToast('Nova matéria publicada com sucesso!', 'success');
+      }
+
+      closeArticleEditorModal();
+      if (currentView === 'admin') {
+        renderAdminTabContent();
+      } else {
+        renderPublicPortal();
+      }
+    }
+
+    function editArticle(id) {
+      const art = articles.find(a => a.id === id);
+      if (art) openArticleEditorModal(art);
+    }
+
+    function duplicateArticle(id) {
+      const art = articles.find(a => a.id === id);
+      if (art) {
+        const copy = {
+          ...art,
+          id: 'art-' + Date.now(),
+          title: art.title + ' (Cópia)',
+          slug: art.slug + '-copia-' + Math.floor(Math.random() * 1000),
+          status: 'rascunho',
+          views_count: 0
+        };
+        articles.unshift(copy);
+        showToast('Matéria duplicada como rascunho.', 'info');
+        renderAdminTabContent();
+      }
+    }
+
+    function deleteArticle(id) {
+      const confirmed = window.confirm('Deseja realmente excluir esta matéria? Esta ação não pode ser desfeita.');
+      if (confirmed) {
+        articles = articles.filter(a => a.id !== id);
+        showToast('Matéria removida com sucesso.', 'info');
+        renderAdminTabContent();
+      }
+    }
+
+    // CRUD Anúncios
+    function openAdModal() {
+      document.getElementById('ad-form').reset();
+      document.getElementById('ad-form-id').value = '';
+      document.getElementById('ad-start-date').value = new Date().toISOString().split('T')[0];
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + 1);
+      document.getElementById('ad-end-date').value = endDate.toISOString().split('T')[0];
+      
+      const modal = document.getElementById('ad-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeAdModal() {
+      const modal = document.getElementById('ad-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function handleSaveAd(e) {
+      e.preventDefault();
+      const campaign_name = document.getElementById('ad-campaign').value.trim();
+      const advertiser_name = document.getElementById('ad-advertiser').value.trim();
+      const format = document.getElementById('ad-format').value;
+      const placement = document.getElementById('ad-placement').value;
+      const image_desktop = document.getElementById('ad-img-desktop').value.trim();
+      const image_mobile = document.getElementById('ad-img-mobile').value.trim() || image_desktop;
+      const destination_url = document.getElementById('ad-url').value.trim();
+      const start_date = document.getElementById('ad-start-date').value;
+      const end_date = document.getElementById('ad-end-date').value;
+      const status = document.getElementById('ad-status').value;
+
+      const newAd = {
+        id: 'ad-' + Date.now(),
+        campaign_name,
+        advertiser_name,
+        format,
+        placement,
+        image_desktop,
+        image_mobile,
+        destination_url,
+        start_date,
+        end_date,
+        status,
+        impressions_count: 0,
+        clicks_count: 0
+      };
+
+      advertisements.unshift(newAd);
+      closeAdModal();
+      showToast('Campanha de anúncio cadastrada com sucesso!', 'success');
+      renderAdminTabContent();
+      renderPublicAds();
+    }
+
+    function toggleAdStatus(adId) {
+      const ad = advertisements.find(a => a.id === adId);
+      if (ad) {
+        ad.status = ad.status === 'ativo' ? 'pausado' : 'ativo';
+        showToast(`Campanha ${ad.status.toUpperCase()}!`, 'info');
+        renderAdminTabContent();
+        renderPublicAds();
+      }
+    }
+
+    function deleteAd(adId) {
+      if (window.confirm('Excluir anúncio permanentemente?')) {
+        advertisements = advertisements.filter(a => a.id !== adId);
+        showToast('Anúncio excluído.', 'info');
+        renderAdminTabContent();
+        renderPublicAds();
+      }
+    }
+
+    // ==========================================
+    // 9. NEWSLETTER & AUXILIARES
+    // ==========================================
+    function handleNewsletterSubmit(e) {
+      e.preventDefault();
+      const emailInput = document.getElementById('newsletter-email');
+      const email = emailInput.value.trim();
+
+      if (!email || !email.includes('@')) {
+        showToast('Por favor, informe um e-mail válido.', 'error');
+        return;
+      }
+
+      newsletterSubscribers.unshift({
+        id: 'sub-' + Date.now(),
+        email: email,
+        date: new Date().toISOString().replace('T', ' ').slice(0, 16),
+        status: 'ativo'
+      });
+
+      emailInput.value = '';
+      showToast('Inscrição confirmada! Obrigado por valorizar o jornalismo científico.', 'success');
+    }
+
+    function exportNewsletterCsv() {
+      let csv = 'email,data_inscricao,status\n';
+      newsletterSubscribers.forEach(s => {
+        csv += `"${s.email}","${s.date}","${s.status}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'sinal_e_ruido_newsletter.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Arquivo CSV gerado e baixado!', 'success');
+    }
+
+    // ==========================================
+    // 10. UTILITÁRIOS, BADGES E HELPERS
+    // ==========================================
+    function renderClassificationBadge(type, compact = false) {
+      if (type === 'sinal') {
+        return `
+          <span class="inline-flex items-center gap-1 font-bold ${compact ? 'px-2 py-0.5 text-[9px]' : 'px-2.5 py-1 text-[11px]'} rounded-full bg-brand-light text-brand border border-brand/20 shadow-sm">
+            <span class="w-1.5 h-1.5 rounded-full bg-brand"></span>
+            SINAL
+          </span>
+        `;
+      } else if (type === 'em_observacao') {
+        return `
+          <span class="inline-flex items-center gap-1 font-bold ${compact ? 'px-2 py-0.5 text-[9px]' : 'px-2.5 py-1 text-[11px]'} rounded-full bg-amber-50 text-amber-700 border border-amber-300 shadow-sm">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+            EM OBSERVAÇÃO
+          </span>
+        `;
+      } else {
+        return `
+          <span class="inline-flex items-center gap-1 font-bold ${compact ? 'px-2 py-0.5 text-[9px]' : 'px-2.5 py-1 text-[11px]'} rounded-full bg-red-50 text-red-700 border border-red-300 shadow-sm">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+            RUÍDO
+          </span>
+        `;
+      }
+    }
+
+    function filterCategory(catName) {
+      currentCategoryFilter = catName;
+      updateCategoryPills();
+      if (currentView !== 'public') {
+        switchView('public');
+      } else {
+        renderPublicPortal();
+      }
+      window.scrollTo({ top: 180, behavior: 'smooth' });
+    }
+
+    function updateCategoryPills() {
+      document.querySelectorAll('.cat-pill').forEach(pill => {
+        if (pill.textContent.trim().toLowerCase() === currentCategoryFilter.toLowerCase() ||
+           (currentCategoryFilter === 'todas' && pill.textContent.trim().toLowerCase() === 'todas')) {
+          pill.classList.add('bg-brand-light', 'text-brand');
+          pill.classList.remove('text-editorial-graphite');
+        } else {
+          pill.classList.remove('bg-brand-light', 'text-brand');
+          pill.classList.add('text-editorial-graphite');
+        }
+      });
+    }
+
+    function handleSearch(val) {
+      currentSearchQuery = val;
+      renderPublicPortal();
+    }
+
+    function autoGenerateSlug(title) {
+      const slugInput = document.getElementById('art-slug');
+      if (!slugInput) return;
+      const slug = title
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9 -]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
+      slugInput.value = slug;
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+      return dateStr;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function copyToClipboard(text) {
+      const el = document.createElement('textarea');
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      showToast('Copiado para a área de transferência!', 'success');
+    }
+
+    function copyArticleUrl() {
+      copyToClipboard(window.location.href);
+    }
+
+    function toggleAdminSidebar() {
+      const sb = document.getElementById('admin-sidebar');
+      sb.classList.toggle('-ml-64');
+    }
+
+    function toggleMobileSearch() {
+      const el = document.getElementById('mobile-search-bar');
+      el.classList.toggle('hidden');
+    }
+
+    function toggleMobileNav() {
+      window.scrollTo({ top: 120, behavior: 'smooth' });
+      showToast('Selecione um dos eixos no carrossel de categorias.', 'info');
+    }
+
+    function scrollToNewsletter() {
+      const el = document.getElementById('newsletter-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showEditorialManifesto() {
+      showToast('Manifesto: Defendemos a primazia da evidência sobre a eloquência e do método sobre a autoridade.', 'info');
+    }
+
+    function showMethodologyModal() {
+      showToast('Metodologia: SINAL (replicado/consistente), EM OBSERVAÇÃO (preliminar), RUÍDO (sem sustentação empírica).', 'info');
+    }
+
+    function showAdTransparencyModal() {
+      showToast('Publicidade: Banners claramente identificados. Não aceitamos patrocínio com ingerência na pauta editorial.', 'info');
+    }
+
+    function shareArticle(network) {
+      showToast(`Link preparado para compartilhamento no ${network.toUpperCase()}.`, 'info');
+    }
+
+    function triggerSimulatedUpload() {
+      showToast('Simulador de Upload: Arquivo enviado ao bucket Supabase article-images com sucesso!', 'success');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      toast.className = `p-3 rounded-xl shadow-lg border text-xs font-medium flex items-center gap-2 transform transition-all duration-300 pointer-events-auto ${
+        type === 'success' ? 'bg-emerald-900 text-emerald-100 border-emerald-700' :
+        type === 'error' ? 'bg-red-900 text-red-100 border-red-700' :
+        'bg-editorial-graphite text-white border-gray-700'
+      }`;
+
+      let icon = type === 'success' ? 'check-circle' : type === 'error' ? 'alert-triangle' : 'info';
+      toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 flex-shrink-0"></i> <span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+      if (window.lucide) lucide.createIcons();
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+  </script>
+</body>
+</html>
